@@ -1,0 +1,68 @@
+/* Header area, similar to your Home page’s header */
+.header {
+    text-align: center;
+    padding: 1rem;
+    color: #fff;
+    background: linear-gradient(#1a1a1a, #111); /* dark gradient */
+  }
+  
+  /* The main container for your form, 
+     you could also add a background or gradient if desired. */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    color: #fff;
+  }
+  
+  /* The form container, centered and styled */
+  .formContainer {
+    background: #0e2c0e; /* or #111 / #14453D if you want to match your green palette */
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  /* Each field label + input grouped together */
+  .formGroup {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Default label style */
+  .formGroup label {
+    margin-bottom: 0.3rem;
+    font-weight: bold;
+    color: #fff;
+  }
+  
+  /* Default input/select style */
+  .formGroup input,
+  .formGroup select {
+    padding: 0.5rem;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background: #222;
+    color: #fff;
+  }
+  
+  /* “Create Mission” button style */
+  .createMissionBtn {
+    background: #48BEFF; /* Photon Blue */
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  
+  /* Hover effect for the button */
+  .createMissionBtn:hover {
+    background: #3DFAFF; /* Electric Blue */
+  }
+  

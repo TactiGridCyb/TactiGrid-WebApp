@@ -1,0 +1,40 @@
+.navbar {
+  display: flex;
+  align-items: center;
+  background: #545460;
+  padding: 1rem 1rem;
+
+}
+
+.navbar ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 1;
+  flex-grow: 1;
+}
+
+.navbar li {
+  margin-right: 1.5rem;
+}
+
+.navbar a {
+  display: inline-block; /* Make the anchor behave like a block element */
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.3rem;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.navbar a:hover {
+  transform: scale(1.1); /* Grows the element to 110% of its original size */
+  color: #ccc;
+}
+
+.logoutBtn {
+  background: #444;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+}

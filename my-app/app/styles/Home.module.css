@@ -1,0 +1,37 @@
+.header {
+    text-align: center;
+    padding: 1rem;
+    font-size: 3rem;
+    color: black;
+  }
+  
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+    color: #fff;
+  }
+  
+  .statsContainer {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 2rem;
+  }
+  
+  .statBox {
+    background: #222;
+    padding: 1rem;
+    border-radius: 8px;
+    width: 200px;
+    text-align: center;
+  }
+  
+  .statBox h2 {
+    margin-bottom: 0.5rem;
+  }
+  
+  .carouselWrapper {
+    display: flex;
+    justify-content: center;
+  }
+  
