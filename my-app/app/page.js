@@ -1,6 +1,9 @@
 import Navbar from './components/Navbar';
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import styles from './styles/Home.module.css';
 import CardView from './components/CardView';
+import GraphCarousel from './components/GraphCarousel.js';
 import InfoCard from './components/InfoCard.js'
 
 export default function Home() {
@@ -39,7 +42,8 @@ export default function Home() {
         </div>
 
         <div className={styles.carouselWrapper}>
-          <CardView></CardView>
+          {/* <CardView></CardView> */}
+          <GraphCarousel />
 
         </div>
       </main>

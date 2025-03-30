@@ -2,7 +2,10 @@
   display: flex;
   align-items: center;
   background: #545460;
-  padding: 1rem 1rem;
+ 
+  padding: 2rem 2rem;
+  padding-bottom: 30px;
+  box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3);
 
 }
 
@@ -15,14 +18,14 @@
 }
 
 .navbar li {
-  margin-right: 1.5rem;
+  margin-right: 1.8rem;
 }
 
 .navbar a {
   display: inline-block; /* Make the anchor behave like a block element */
   color: #fff;
   text-decoration: none;
-  font-size: 1.3rem;
+  font-size: 2rem;
   transition: transform 0.3s ease, color 0.3s ease;
 }
 

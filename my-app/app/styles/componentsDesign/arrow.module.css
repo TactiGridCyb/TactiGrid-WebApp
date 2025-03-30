@@ -1,0 +1,32 @@
+.slickarrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+    width: 40px;
+    height: 40px;
+    background-color: #000;  /* Black background */
+    color: #fff;             /* White text */
+    border-radius: 50%;      /* Circular shape */
+    line-height: 40px;       /* Center text vertically */
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  .slickarrow:hover {
+    background-color: #333;  /* Slightly lighter on hover */
+  }
+  
+  .slickprev {
+    
+    left: 10px;
+    font-size: 30px;
+  }
+  
+  .slicknext {
+    
+    right: 10px;
+    font-size: 30px;
+  }
+  
