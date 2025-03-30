@@ -2,9 +2,10 @@
 .header {
   text-align: center;
   padding: 1rem;
-  color: #000; 
-  background: #fff; 
-  border-bottom: 1px solid #ccc;
+  font-size: 8rem;
+  color: black;
+  font-family: bebas;
+  text-shadow: 0 0 10px rgba(48, 48, 48, 0.3);
 }
 
 /* Main container (centered content, white background) */

@@ -1,54 +1,86 @@
-/* Background / Header Setup */
+.missionCard {
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  background-color: #111;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  
+  
+}
 .header {
   text-align: center;
   padding: 1rem;
-  background: linear-gradient(#1a1a1a, #111); /* dark gradient, similar to your Home page */
-  color: #fff;
+  font-size: 8rem;
+  color: black;
+  font-family: bebas;
+  text-shadow: 0 0 10px rgba(48, 48, 48, 0.3);
 }
 
-/* The main wrapper for content */
-.main {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-  color: #fff;
-  /* If you want the same background for the entire page: 
-     remove the gradient from .header and do it here.
-     E.g.: background: linear-gradient(90deg, #0B0B0B, #0D3B0D); 
-  */
+.headerRow {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-/* Container for the list of missions */
-.missionsContainer {
+.icon {
+  margin-right: 1rem;
+  
+}
+
+.icon img {
+  width: 40px;
+  height: 40px;
+}
+
+.titleContainer {
   display: flex;
   flex-direction: column;
-  gap: 1rem;         /* space between mission boxes */
-  margin-bottom: 2rem;
 }
 
-/* Individual mission "rows"/boxes */
-.missionBox {
-  background: #000;  /* black box */
-  border-radius: 8px;
-  padding: 1rem;
-  border: 2px solid #444; /* subtle border */
+.title {
+  font-size: 1.8rem; /* Bigger title font */
+  margin: 0;
+}
+
+.missionId {
   font-size: 0.9rem;
-  color: #fff;
+  color: #aaa;
 }
 
-/* Button to create report */
-.createReportBtn {
-  background: transparent;
-  border: 2px solid #1fa9b8;
-  border-radius: 8px;
-  color: #ffffff;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
+.detailsRow {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.5rem 0;
+}
+
+.detail {
+  flex: 1;
+}
+
+.detailLabel {
   font-weight: bold;
-  transition: background-color 0.2s, color 0.2s;
+  margin-right: 0.25rem;
 }
 
-.createReportBtn:hover {
-  background-color: #ffffff;
-  color: #000;
+.buttonContainer {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.viewVideoBtn {
+  background-color: #000;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.viewVideoBtn:hover {
+  background-color: #333;
 }

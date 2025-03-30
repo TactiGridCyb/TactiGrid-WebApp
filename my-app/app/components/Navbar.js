@@ -21,7 +21,7 @@ export default function Navbar() {
           <Link href="/config">Configuration</Link>
         </li>
       </ul>
-      <button className={styles.logoutBtn}>Logout</button>
+      <button className={styles.logoutBtn}>Log In</button>
     </nav>
   );
 }
