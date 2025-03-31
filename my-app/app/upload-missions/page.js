@@ -30,6 +30,13 @@ export default function UploadMission() {
           >
             Upload
           </button>
+          <button 
+            className={styles.uploadBtn}
+            
+          >
+            Open Socket
+          </button>
+          <h2>Output From the watch: </h2>
         </div>
       </main>
     </div>
