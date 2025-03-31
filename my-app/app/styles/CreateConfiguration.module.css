@@ -10,19 +10,26 @@
   .main {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem;
-    color: #fff;
+    padding: 2rem;
+    color: #333;
+    background: #c4e7e3;
+    font-size: 2rem !important; 
+    box-shadow: 0 10px 10px rgba(0,0,0,0.3);
+    
   }
   
   /* Container for the entire form section */
   .formContainer {
-    background: #222;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
+  flex-direction: column;
+  gap: 1.5rem;
+  
+  
+  /* Optional: add a light border or box shadow */
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
   
   /* Each label + input/select grouped together */
@@ -34,7 +41,7 @@
   
   .formGroup label {
     font-weight: bold;
-    color: #fff;
+    color: #3a3a3a;
   }
   
   .formGroup input,
@@ -60,5 +67,45 @@
   
   .createBtn:hover {
     background: #3DFAFF; /* Electric Blue on hover */
+  }
+  .formGroup {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    
+  }
+  
+  /* Label styling */
+  .formGroup label {
+    margin-bottom: 0.3rem;
+    font-weight: 500;
+    color: #333;
+    font-size: 2rem !important; 
+  }
+  
+  /* Inputs & selects: underlined style, no background */
+  .formGroup input,
+  .formGroup select {
+    border: none;
+    border-bottom: 1px solid #ccc;
+    padding: 0.5rem 0;
+    font-size: 1.5rem;
+    color: #333;
+    background: transparent;
+    outline: none; /* Remove default focus outline */
+    transition: border-bottom-color 0.2s ease-in-out;
+  
+  }
+  
+  /* Placeholder color */
+  .formGroup input::placeholder,
+  .formGroup select::placeholder {
+    color: #999;
+  }
+  
+  /* Focused state: highlight the bottom border */
+  .formGroup input:focus,
+  .formGroup select:focus {
+    border-bottom-color: #666;
   }
   

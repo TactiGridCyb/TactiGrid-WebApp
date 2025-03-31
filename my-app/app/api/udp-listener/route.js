@@ -25,13 +25,13 @@ export async function POST() {
     udpServer.close();
   });
 
-  // Bind to port 5050
-  udpServer.bind(5050, () => {
-    console.log("UDP server listening on port 5050");
+  // Bind to port 5555
+  udpServer.bind(5555,"192.168.1.202", () => {
+    console.log("UDP server listening on port 5555");
   });
 
   isServerStarted = true;
-  return NextResponse.json({ status: "UDP server started on port 5050" });
+  return NextResponse.json({ status: "UDP server started on port 5555" });
 }
 
 export async function GET() {

@@ -44,16 +44,7 @@ export default function ModalCard({ onClose }) {
                 required
               />
             </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="message">Message:</label>
-              <textarea
-                id="message"
-                placeholder="Enter your message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                required
-              ></textarea>
-            </div>
+            
             <button type="submit" className={styles.submitBtn}>
               Submit
             </button>

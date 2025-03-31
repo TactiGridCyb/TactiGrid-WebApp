@@ -17,9 +17,10 @@
     background: linear-gradient(90deg, #dadada, #d0d0d0);
     border-radius: 8px;
     padding: 2rem;
-    width: 400px;
+    width: 700px;
+    height: 700px;
     color: #000;
-    
+    font-size:2rem ;
     max-width: 90%;
     position: relative;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
@@ -32,10 +33,12 @@
     position: absolute;
     top: 8px;
     right: 8px;
+    padding: 1rem;
+
     background: transparent;
     border: none;
     color: #000;
-    font-size: 1.5rem;
+    font-size: 3rem;
     
     cursor: pointer;
   }
@@ -45,6 +48,7 @@
     margin-top: 0;
     text-align: center;
     color: #000;
+    font-size: 3rem;
   }
   
   /* Form styles */
@@ -69,8 +73,8 @@
     padding: 0.5rem;
     border: 1px solid #333;
     border-radius: 4px;
-    background-color: #222;
-    color: #fff;
+    background-color: #d1d1d1;
+    color: #020202;
   }
   
   .submitBtn {
@@ -83,6 +87,7 @@
     cursor: pointer;
     width: 100%;
     transition: background 0.2s;
+    margin-top: 11rem;
   }
   
   .submitBtn:hover {

@@ -21,7 +21,9 @@ export default function CreateConfiguration() {
       </header>
 
       {/* Main content */}
+      
       <main className={styles.main}>
+      <div className={styles.card}>
         <div className={styles.formContainer}>
           {/* General Location */}
           <div className={styles.formGroup}>
@@ -61,6 +63,7 @@ export default function CreateConfiguration() {
           >
             Create
           </button>
+        </div>
         </div>
       </main>
     </div>

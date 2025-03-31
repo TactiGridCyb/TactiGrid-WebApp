@@ -14,7 +14,10 @@
   margin: 0 auto;
   padding: 2rem;
   color: #333;
-  background: #fff;
+  background: #c4e7e3;
+  font-size: 2rem !important; 
+  box-shadow: 0 10px 10px rgba(0,0,0,0.3);
+  
 }
 
 /* Form container */
@@ -22,6 +25,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  
   
   /* Optional: add a light border or box shadow */
   background: #fff;
@@ -35,6 +39,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  
 }
 
 /* Label styling */
@@ -42,7 +47,7 @@
   margin-bottom: 0.3rem;
   font-weight: 500;
   color: #333;
-  font-size: 0.95rem;
+  font-size: 2rem !important; 
 }
 
 /* Inputs & selects: underlined style, no background */
@@ -51,11 +56,12 @@
   border: none;
   border-bottom: 1px solid #ccc;
   padding: 0.5rem 0;
-  font-size: 1rem;
+  font-size: 1.5rem;
   color: #333;
   background: transparent;
   outline: none; /* Remove default focus outline */
   transition: border-bottom-color 0.2s ease-in-out;
+
 }
 
 /* Placeholder color */
