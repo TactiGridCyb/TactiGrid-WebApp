@@ -1,10 +1,12 @@
 /* Header section: dark gradient + white text */
 .header {
-    text-align: center;
-    padding: 1rem;
-    color: #fff;
-    background: linear-gradient(#1a1a1a, #111); /* similar to your other pages */
-  }
+  text-align: center;
+  padding: 1rem;
+  font-size: 8rem;
+  color: black;
+  font-family: bebas;
+  text-shadow: 0 0 10px rgba(48, 48, 48, 0.3);
+}
   
   /* Main container: sets width, spacing, text color */
   .main {

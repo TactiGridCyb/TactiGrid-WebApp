@@ -1,0 +1,90 @@
+/* Overlay covers the entire viewport */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* semi-transparent background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  /* The modal card container */
+  .card {
+    background: linear-gradient(90deg, #dadada, #d0d0d0);
+    border-radius: 8px;
+    padding: 2rem;
+    width: 400px;
+    color: #000;
+    
+    max-width: 90%;
+    position: relative;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    color: #fff;
+  }
+  
+  /* Close button in the top-right corner */
+  .closeBtn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: #000;
+    font-size: 1.5rem;
+    
+    cursor: pointer;
+  }
+  
+  /* Card title styling */
+  .cardTitle {
+    margin-top: 0;
+    text-align: center;
+    color: #000;
+  }
+  
+  /* Form styles */
+  .form {
+    margin-top: 1rem;
+    color: #000;
+  }
+  
+  .formGroup {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+  }
+  
+  .formGroup label {
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+  }
+  
+  .formGroup input,
+  .formGroup textarea {
+    padding: 0.5rem;
+    border: 1px solid #333;
+    border-radius: 4px;
+    background-color: #222;
+    color: #fff;
+  }
+  
+  .submitBtn {
+    background: #48beff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.75rem 1.5rem;
+    color: #000;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+  }
+  
+  .submitBtn:hover {
+    background: #3dfaef;
+  }
+  
