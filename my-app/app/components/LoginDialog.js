@@ -22,17 +22,7 @@ export default function ModalCard({ onClose }) {
           </button>
           <h2 className={styles.cardTitle}>Enter Log in Information</h2>
           <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.formGroup}>
-              <label htmlFor="name">Name:</label>
-              <input
-                id="name"
-                type="text"
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
+            
             <div className={styles.formGroup}>
               <label htmlFor="email">Email:</label>
               <input
@@ -41,6 +31,17 @@ export default function ModalCard({ onClose }) {
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className={styles.formGroup}>
+              <label htmlFor="name">Password:</label>
+              <input
+                id="name"
+                type="text"
+                placeholder="Enter your Password"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
               />
             </div>

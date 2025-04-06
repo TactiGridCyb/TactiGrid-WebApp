@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import styles from "../styles/uploadMissions.module.css";
+import styles from "../styles/pagesDesign/uploadMissions.module.css";
 
 export default function UploadMission() {
   const [socketOutput, setSocketOutput] = useState("");

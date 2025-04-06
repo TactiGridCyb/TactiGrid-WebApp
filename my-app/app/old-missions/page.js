@@ -1,5 +1,5 @@
 import Navbar from '../components/Navbar.js';
-import styles from '../styles/OldMissions.module.css';
+import styles from '../styles/pagesDesign/OldMissions.module.css';
 import MissionItem from '../components/missionItem.js';
 
 

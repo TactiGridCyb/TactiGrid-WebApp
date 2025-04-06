@@ -1,7 +1,7 @@
 import Navbar from './components/Navbar';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import styles from './styles/Home.module.css';
+import styles from './styles/pagesDesign/Home.module.css';
 import CardView from './components/CardView';
 import GraphCarousel from './components/GraphCarousel.js';
 import InfoCard from './components/InfoCard.js'
@@ -17,25 +17,25 @@ export default function Home() {
 
       <main className={styles.main}>
         <div className={styles.statsContainer}>
-          <InfoCard title="Important Notice"
+          <InfoCard title="Missions completed: 9"
             lines={[
-              "Your report is overdue.",
-              "Please submit before Friday.",
-              "Contact admin if needed."
+              "This Shows the amout",
+              "of missions completed,",
+              "since the start of the year."
             ]}
           />
-          <InfoCard title="Important Notice"
+          <InfoCard title="Missions active: 2"
             lines={[
-              "Your report is overdue.",
-              "Please submit before Friday.",
-              "Contact admin if needed."
+              "This Shows the amout",
+              "of missions active,",
+              "and currently using TactiGrid."
             ]}
           />
-          <InfoCard title="Important Notice"
+          <InfoCard title="Mission successions Rate: 87%"
             lines={[
-              "Your report is overdue.",
-              "Please submit before Friday.",
-              "Contact admin if needed."
+              "This Shows the successions",
+              "rate of missions,",
+              "since the start of the year."
             ]}
           />
 

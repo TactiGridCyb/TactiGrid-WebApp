@@ -1,7 +1,7 @@
 "use client";
 
 import Navbar from '../components/Navbar.js';
-import styles from '../styles/CreateConfiguration.module.css';
+import styles from '../styles/pagesDesign/CreateConfiguration.module.css';
 
 export default function CreateConfiguration() {
   // Example function to handle configuration creation
@@ -47,11 +47,11 @@ export default function CreateConfiguration() {
 
           {/* Post Mission Logs */}
           <div className={styles.formGroup}>
-            <label>Select Post Mission Logs</label>
+            <label>Select Mission Logs Format</label>
             <select>
-              <option value="">Choose logs...</option>
-              <option value="logs1">Logs #1</option>
-              <option value="logs2">Logs #2</option>
+              <option value="">Choose log format...</option>
+              <option value="logs1">Format #1</option>
+              <option value="logs2">Format #2</option>
               {/* Add more options as needed */}
             </select>
           </div>

@@ -1,5 +1,5 @@
 import Navbar from '../components/Navbar.js';
-import styles from '../styles/createMission.module.css';
+import styles from '../styles/pagesDesign/createMission.module.css';
 
 export default function CreateNewMission() {
   const handleCreateMission = () => {
