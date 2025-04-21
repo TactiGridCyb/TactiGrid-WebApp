@@ -9,11 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-<<<<<<< HEAD
+    "bcrypt": "^5.1.1",
     "chart.js": "^4.4.9",
-=======
+    "jsonwebtoken": "^9.0.2",
     "jws": "^4.0.0",
->>>>>>> 48b21badb355f54e73041d723b38bc780edb17a7
     "mongoose": "^8.13.2",
     "next": "^15.2.4",
     "react": "^19.1.0",
