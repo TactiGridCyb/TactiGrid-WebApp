@@ -1,0 +1,50 @@
+.card {
+  border-radius: var(--radius-lg);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* header row */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title  { font-size: .875rem; color: var(--gray-500); font-weight: 500; }
+.value  { font-size: 1.5rem;  color: var(--gray-800); font-weight: 600; }
+.subtle { font-size: .75rem;  color: var(--gray-400); }
+
+.icon   { width: 1.25rem; height: 1.25rem; }
+
+/* progress bar */
+.barOuter {
+  height: .5rem;
+  background: var(--gray-200);
+  border-radius: .5rem;
+  overflow: hidden;
+}
+.barInner {
+  height: 100%;
+  border-radius: inherit;
+  transition: width .3s ease;
+}
+
+/* accent colour helpers (text + bar) */
+.sky     { color: var(--blue-500);   }
+.pink    { color: var(--pink-500);   }
+.green   { color: var(--green-500);  }
+.yellow  { color: var(--yellow-400); }
+.red     { color: var(--red-500);    }
+.purple  { color: var(--purple-500); }
+
+.card.sky     .barInner { background: var(--blue-500);   }
+.card.pink    .barInner { background: var(--pink-500);   }
+.card.green   .barInner { background: var(--green-500);  }
+.card.yellow  .barInner { background: var(--yellow-400); }
+.card.red     .barInner { background: var(--red-500);    }
+.card.purple  .barInner { background: var(--purple-500); }

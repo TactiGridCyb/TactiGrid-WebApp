@@ -1,0 +1,37 @@
+.header {
+  text-align: center;
+  padding: 1rem;
+  font-size: 8rem;
+  color: black;
+  font-family: bebas;
+  text-shadow: 0 0 10px rgba(48, 48, 48, 0.3);
+}
+  .dashboardRoot {
+    min-height: 100vh;
+    
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    font-family: system-ui, sans-serif;
+  }
+  
+  .sectionGrid {
+    display: grid;
+    gap: 1.5rem;
+  }
+  
+  .twoThirdOneThird {
+    display: grid;
+    gap: 1.5rem;
+  }
+  
+  @media (min-width: 1280px) {           /* ≥ 1280 px */
+    .sectionGrid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .twoThirdOneThird {
+      grid-template-columns: 2fr 1fr;
+    }
+  }
+  
