@@ -6,6 +6,8 @@ import styles from "../styles/pagesDesign/uploadMissions.module.css";
 export default function UploadMission() {
   const [socketOutput, setSocketOutput] = useState("");
   const [lastReceivedMessage, setLastReceivedMessage] = useState("");
+  const [shares, setShares] = useState(null);
+  const [recoveredSecret, setRecoveredSecret] = useState('');
 
   // Simulate an upload action
   const handleUpload = () => {
@@ -28,10 +30,33 @@ export default function UploadMission() {
     }
   };
 
-  const handleShamir = () => {
-    console.log('Upload Shamir clicked');
-    alert('Shamir upload invoked (stub)');
-    // TODO: call your Shamir algorithm here
+  const handleShamir = async () => {
+    try {
+      // 1) Define a demo secret and encode to base64
+      const demoSecret = 'TOPSECRET';
+      const secretBase64 = btoa(demoSecret);
+
+      // 2) Split into shares (n=5, k=3)
+      const splitRes = await fetch('/api/shamir/split', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secretBase64, n: 5, k: 3 })
+      });
+      const { shares } = await splitRes.json();
+      setShares(shares);
+
+      // 3) Reconstruct using the first 3 shares
+      const recRes = await fetch('/api/shamir/reconstruct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shares: shares.slice(0, 3) })
+      });
+      const { secretBase64: recBase64 } = await recRes.json();
+      setRecoveredSecret(atob(recBase64));
+    } catch (err) {
+      console.error('Shamir error:', err);
+      alert('Failed to run Shamir algorithm');
+    }
   };
 
   // Periodically check for new UDP messages
@@ -77,8 +102,41 @@ export default function UploadMission() {
           <button className={styles.uploadBtn} onClick={handleShamir}>
             Upload Shamir
           </button>
-          <h2>Output From the watch: {socketOutput}</h2>
         </div>
+
+        <section className={styles.uploadContainer}>
+          <h2>Output From the Watch:</h2>
+          <p>{socketOutput}</p>
+        </section>
+
+        {shares && (
+          <section className={styles.uploadContainer}>
+            <h2>Generated Shamir Shares (need any 3 of 5):</h2>
+            <table className={styles.shareTable}>
+              <thead>
+                <tr>
+                  <th>Share #</th>
+                  <th>Points (x,y)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shares.map((share, idx) => (
+                  <tr key={idx}>
+                    <td>{idx + 1}</td>
+                    <td>{share.map(([x, y]) => `(${x},${y})`).join(', ')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
+
+        {recoveredSecret && (
+          <section className={styles.uploadContainer}>
+            <h2>Reconstructed Secret:</h2>
+            <pre className={styles.recovered}>{recoveredSecret}</pre>
+          </section>
+        )}
       </main>
     </div>
   );
