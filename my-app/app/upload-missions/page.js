@@ -28,6 +28,12 @@ export default function UploadMission() {
     }
   };
 
+  const handleShamir = () => {
+    console.log('Upload Shamir clicked');
+    alert('Shamir upload invoked (stub)');
+    // TODO: call your Shamir algorithm here
+  };
+
   // Periodically check for new UDP messages
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -67,6 +73,9 @@ export default function UploadMission() {
           </button>
           <button className={styles.uploadBtn} onClick={startUDPServer}>
             Open Socket
+          </button>
+          <button className={styles.uploadBtn} onClick={handleShamir}>
+            Upload Shamir
           </button>
           <h2>Output From the watch: {socketOutput}</h2>
         </div>
