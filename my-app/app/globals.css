@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
+
+
+
 :root {
   --background: #c2d0e9;
   --foreground: #171717;
+  --blue-500:   #3b82f6;
+  --pink-500:   #ec4899;
+  --green-500:  #22c55e;
+  --yellow-400: #facc15;
+  --red-500:    #ef4444;
+  --purple-500: #8b5cf6;
+
+  --gray-50:  #f9fafb;
+  --gray-200: #e5e7eb;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+
+  --radius-lg: 0.75rem;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.10);
 }
 
 @theme inline {

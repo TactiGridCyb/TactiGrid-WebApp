@@ -28,7 +28,7 @@ export default function Navbar() {
         <li><Link href="/create-mission">Create new Mission</Link></li>
         <li><Link href="/upload-missions">Upload Missions</Link></li>
         <li><Link href="/config">Configuration</Link></li>
-        <li><Link href="/statistics">Statistics</Link></li>
+        <li><Link href="/dashboard">Statistics</Link></li>
       </ul>
 
       {user ? (
