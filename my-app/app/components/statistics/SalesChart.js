@@ -19,7 +19,7 @@ export default function SalesChart({ data }) {
 
   return (
     <div className={cls.wrapper}>
-      <h3 className={cls.title}>Sales Analysis</h3>
+      <h3 className={cls.title}>Missions Analysis</h3>
       <ResponsiveContainer width="100%" height={260}>
         <BarChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -27,7 +27,7 @@ export default function SalesChart({ data }) {
           <YAxis />
           <Tooltip />
           <Legend />
-          <Bar  dataKey="sales" fill="var(--blue-500)" name="Total Sales" barSize={32} />
+          <Bar  dataKey="sales" fill="var(--blue-500)" name="Total Missions" barSize={32} />
           <Line type="monotone" dataKey="units" stroke="var(--pink-500)" name="Units Sold" />
         </BarChart>
       </ResponsiveContainer>

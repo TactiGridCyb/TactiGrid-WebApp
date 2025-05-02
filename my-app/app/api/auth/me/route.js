@@ -5,9 +5,12 @@ import dbConnect from '@/lib/mongoose';
 import User from '@/models/User';
 
 export async function GET() {
-  const token = cookies().get('authToken')?.value;
-  if (!token) return NextResponse.json({ user: null });
-
+  // ← await the cookies() call first
+  const cookieStore = await cookies();
+  const token = cookieStore.get('authToken')?.value;
+  if (!token) {
+    return NextResponse.json({ user: null });
+  }
   try {
     const { sub } = jwt.verify(token, process.env.JWT_SECRET);
     await dbConnect();

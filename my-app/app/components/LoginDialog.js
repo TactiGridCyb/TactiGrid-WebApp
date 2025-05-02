@@ -1,52 +1,72 @@
 "use client";
 import { useState } from 'react';
-import styles from '../styles/componentsDesign/LoginDialog.module.css';
+import cls from '../styles/componentsDesign/LoginDialog.module.css';
+
 
 export default function LoginDialog({ onClose, onSuccess }) {
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError]       = useState("");
 
-  const handleSubmit = async (e) => {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setError('');
+    setError("");
 
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
     if (!res.ok) {
-      setError(data.message || 'Login failed');
+      setError(data.message || "Login failed");
       return;
     }
 
-    onSuccess(data.user);   // tell Navbar
-    onClose();
-  };
+    onSuccess?.(data.user);  // notify parent
+    onClose();               // close dialog
+  }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.card} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.closeBtn} onClick={onClose}>&times;</button>
-        <h2 className={styles.cardTitle}>Log In</h2>
+    <div className={cls.overlay} >
+      <div className={cls.card} onClick={(e) => e.stopPropagation()}>
+        <button className={cls.closeBtn} onClick={onClose}>
+          &times;
+        </button>
 
-        {error && <p className={styles.error}>{error}</p>}
+        <h2 className={cls.cardTitle}>Sign in</h2>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <label>Email
-            <input type="email" value={email}
-                   onChange={(e) => setEmail(e.target.value)} required />
-          </label>
+        {error && <p className={cls.errorMsg}>{error}</p>}
 
-          <label>Password
-            <input type="password" value={password}
-                   onChange={(e) => setPassword(e.target.value)} required />
-          </label>
+        <form className={cls.form} onSubmit={handleSubmit}>
+          <div className={cls.formGroup}>
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-          <button type="submit" className={styles.submitBtn}>Sign in</button>
+          <div className={cls.formGroup}>
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <button type="submit" className={cls.submitBtn}>
+            Log in
+          </button>
         </form>
       </div>
     </div>
