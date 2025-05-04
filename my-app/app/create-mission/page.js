@@ -7,7 +7,7 @@ import styles from '../styles/pagesDesign/createMission.module.css';
 
 export default function CreateNewMission() {
   const [showModal, setShowModal] = useState(false);
-  const [revokeCertFile, setRevokeCertFile] = useState(null);
+  const [certFile, setCertFile] = useState(null);
   
   const handleCreateMission = async () => {
     alert("Created Mission!");
@@ -54,13 +54,13 @@ export default function CreateNewMission() {
   };
   
   const handleRevokeCertificate = async () => {
-    if (!revokeCertFile) {
+    if (!certFile) {
       alert('Please select a certificate file to revoke');
       return;
     }
   
     try {
-      const certPem = await revokeCertFile.text();
+      const certPem = await certFile.text();
   
       const res = await fetch('/api/cert/revoke', {
         method: 'POST',
@@ -80,6 +80,35 @@ export default function CreateNewMission() {
       alert('Error reading or revoking certificate');
     }
   };
+
+  const handleVerifyCertificate = async () => {
+    if (!certFile) {
+      alert('Please select a certificate file to verify');
+      return;
+    }
+  
+    try {
+      const certPem = await certFile.text();
+  
+      const res = await fetch('/api/cert/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ certPem })
+      });
+  
+      const result = await res.json();
+  
+      if (res.ok && result.valid) {
+        alert(`Certificate is valid (Serial: ${result.serial})`);
+      } else {
+        alert(`Invalid certificate: ${result.reason || result.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error verifying certificate');
+    }
+  };
+  
   
   
 
@@ -160,11 +189,17 @@ export default function CreateNewMission() {
             >
               Revoke Certificate
             </button>
+            <button
+              className={styles.createMissionBtn}
+              onClick={handleVerifyCertificate}
+              style={{ backgroundColor: '#999BA3' }}
+            >
+              Verify Certificate
+            </button>
             <input
               type="file"
               accept=".pem"
-              onChange={(e) => setRevokeCertFile(e.target.files[0])}
-              style={{ marginTop: '1rem' }}
+              onChange={(e) => setCertFile(e.target.files[0])}
             />
           </div>
         </div>
@@ -199,7 +234,7 @@ export default function CreateNewMission() {
           >
             {/* Soldier Section */}
             <div style={{ flex: 1 }}>
-              <h2 style={{ marginTop: 0 }}>🪖 Soldier</h2>
+              <h2 style={{ marginTop: 0 }}>Soldier</h2>
               <p><strong>Name:</strong> {certData.name}</p>
               <p><strong>Mission ID:</strong> {certData.missionId}</p>
               <h3 style={{ marginBottom: '0.5rem' }}>Certificate:</h3>
@@ -259,7 +294,7 @@ export default function CreateNewMission() {
 
             {/* Commander Section */}
             <div style={{ flex: 1 }}>
-              <h2 style={{ marginTop: 0 }}>🗡️ Commander</h2>
+              <h2 style={{ marginTop: 0 }}>Commander</h2>
               <p>
                 <strong>Receives:</strong><br />
                 • Root CA public certificate<br />
