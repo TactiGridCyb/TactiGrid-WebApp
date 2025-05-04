@@ -1,5 +1,3 @@
-// my-app/app/api/cert/issue/route.js
-// Force Node.js runtime so we can use fs and node-forge
 export const runtime = 'nodejs';
 
 import fs from 'fs';
