@@ -10,9 +10,26 @@ export default function CreateNewMission() {
   const [certData, setCertData]   = useState(null);
 
   const handleCreateMission = async () => {
+    alert("Created Mission!");
+  };
+
+  // helper to download text as a .pem file
+  const downloadPem = (filename, content) => {
+    const blob = new Blob([content], { type: 'application/x-pem-file' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleIssueCertificate = async () => {
     const missionId = `M-${Date.now()}`;
     const selectEl = document.querySelector('select[name="soldiers"]');
-    const name     = selectEl?.value;
+    const name = selectEl?.value;
     if (!name) {
       alert('Please select a soldier');
       return;
@@ -33,18 +50,9 @@ export default function CreateNewMission() {
       alert('Failed to generate certificate');
     }
   };
-
-  // helper to download text as a .pem file
-  const downloadPem = (filename, content) => {
-    const blob = new Blob([content], { type: 'application/x-pem-file' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  
+  const handleRevokeCertificate = async () => {
+    alert('Revoking certificate...');
   };
 
   return (
@@ -101,12 +109,30 @@ export default function CreateNewMission() {
             </select>
           </div>
 
-          <button
-            className={styles.createMissionBtn}
-            onClick={handleCreateMission}
-          >
-            Create Mission
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+            <button
+              className={styles.createMissionBtn}
+              onClick={handleCreateMission}
+            >
+              Create Mission
+            </button>
+
+            <button
+              className={styles.createMissionBtn}
+              onClick={handleIssueCertificate}
+              style={{ backgroundColor: '#28a745' }}
+            >
+              Issue Certificate
+            </button>
+
+            <button
+              className={styles.createMissionBtn}
+              onClick={handleRevokeCertificate}
+              style={{ backgroundColor: '#dc3545' }}
+            >
+              Revoke Certificate
+            </button>
+          </div>
         </div>
       </main>
 
