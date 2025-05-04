@@ -30,13 +30,14 @@ export async function POST(req) {
       return NextResponse.json({ valid: false, reason: 'Certificate is revoked' }, { status: 400 });
     }
 
-    const verified = caCert.publicKey.verify(
-      cert.md.digest().bytes(),
-      cert.signature
-    );
+    const verified = caCert.verify(cert);
+
 
     if (!verified) {
-      return NextResponse.json({ valid: false, reason: 'Signature is invalid' }, { status: 400 });
+      return NextResponse.json({
+        valid: false,
+        reason: 'Signature is invalid',
+      }, { status: 400 });
     }
 
     return NextResponse.json({

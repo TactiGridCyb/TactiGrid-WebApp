@@ -30,7 +30,7 @@ export async function POST(req) {
     const keys = pki.rsa.generateKeyPair(2048);
     const csr = pki.createCertificationRequest();
     csr.publicKey = keys.publicKey;
-    csr.setSubject([{ name: 'TactiGrid', value: name }]);
+    csr.setSubject([{ name: 'commonName', value: name }]);
     csr.sign(keys.privateKey);
 
     if (!csr.verify()) return NextResponse.json({ error: 'CSR verification failed' }, { status: 400 });
@@ -55,7 +55,6 @@ export async function POST(req) {
 
     return NextResponse.json({
       name,
-      missionId,
       certificate,
       privateKey,
       serialNumber: cert.serialNumber,
