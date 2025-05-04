@@ -7,44 +7,45 @@ import styles from '../styles/pagesDesign/createMission.module.css';
 
 export default function CreateNewMission() {
   const [showModal, setShowModal] = useState(false);
-  const [certData, setCertData]   = useState(null);
 
   const handleCreateMission = async () => {
     alert("Created Mission!");
   };
 
-  // helper to download text as a .pem file
-  const downloadPem = (filename, content) => {
-    const blob = new Blob([content], { type: 'application/x-pem-file' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   const handleIssueCertificate = async () => {
-    const missionId = `M-${Date.now()}`;
     const selectEl = document.querySelector('select[name="soldiers"]');
-    const name = selectEl?.value;
-    if (!name) {
+    const soldiersName = selectEl?.value;
+    if (!soldiersName) {
       alert('Please select a soldier');
       return;
     }
 
     try {
       const res = await fetch('/api/cert/issue', {
-        method:  'POST',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ name, missionId })
+        body: JSON.stringify({ name: soldiersName })
       });
-      if (!res.ok) throw new Error('API returned ' + res.status);
+      
       const data = await res.json();
-      setCertData({ ...data, name, missionId });
-      setShowModal(true);
+      
+      if (res.ok) {
+        const certBlob = new Blob([data.certificate], { type: 'application/x-pem-file' });
+        const certUrl = URL.createObjectURL(certBlob);
+        const aCert = document.createElement('a');
+        aCert.href = certUrl;
+        aCert.download = `${data.name}_cert.pem`;
+        aCert.click();
+        URL.revokeObjectURL(certUrl);
+      
+        const keyBlob = new Blob([data.privateKey], { type: 'application/x-pem-file' });
+        const keyUrl = URL.createObjectURL(keyBlob);
+        const aKey = document.createElement('a');
+        aKey.href = keyUrl;
+        aKey.download = `${data.name}_key.pem`;
+        aKey.click();
+        URL.revokeObjectURL(keyUrl);
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to generate certificate');
