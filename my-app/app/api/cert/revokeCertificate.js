@@ -1,4 +1,3 @@
-// app/api/cert/revoke/route.js
 import { MongoClient } from 'mongodb';
 import forge from 'node-forge';
 import { NextResponse } from 'next/server';

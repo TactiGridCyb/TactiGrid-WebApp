@@ -7,7 +7,8 @@ import styles from '../styles/pagesDesign/createMission.module.css';
 
 export default function CreateNewMission() {
   const [showModal, setShowModal] = useState(false);
-
+  const [revokeCertFile, setRevokeCertFile] = useState(null);
+  
   const handleCreateMission = async () => {
     alert("Created Mission!");
   };
@@ -53,8 +54,34 @@ export default function CreateNewMission() {
   };
   
   const handleRevokeCertificate = async () => {
-    alert('Revoking certificate...');
+    if (!revokeCertFile) {
+      alert('Please select a certificate file to revoke');
+      return;
+    }
+  
+    try {
+      const certPem = await revokeCertFile.text();
+  
+      const res = await fetch('/api/cert/revoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ certPem })
+      });
+  
+      const result = await res.json();
+  
+      if (res.ok) {
+        alert(`Certificate revoked successfully! (Serial: ${result.serial})`);
+      } else {
+        alert(`Revocation failed: ${result.error || result.message}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error reading or revoking certificate');
+    }
   };
+  
+  
 
   return (
     <div>
@@ -133,6 +160,12 @@ export default function CreateNewMission() {
             >
               Revoke Certificate
             </button>
+            <input
+              type="file"
+              accept=".pem"
+              onChange={(e) => setRevokeCertFile(e.target.files[0])}
+              style={{ marginTop: '1rem' }}
+            />
           </div>
         </div>
       </main>
