@@ -12,6 +12,7 @@ export async function GET() {
   const rows = await Log.find({ userId: me._id })
                         .select({
                           _id: 1,
+                          sessionId: 1,
                           operation: 1,
                           missionId: 1,
                           StartTime: 1,

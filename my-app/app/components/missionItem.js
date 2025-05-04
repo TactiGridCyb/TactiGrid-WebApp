@@ -1,10 +1,12 @@
 // components/MissionItem.js
 "use client";
 import React from 'react';
+import Link from 'next/link';
 import styles from '../styles/componentsDesign/missionItem.module.css';
 
 const MissionItem = ({ mission }) => {
   const {
+    sessionId,
     name,
     missionID,
     startTime,
@@ -18,7 +20,9 @@ const MissionItem = ({ mission }) => {
   } = mission;
 
   return (
+    
     <div className={styles.missionCard}>
+      <Link href={`/missions/${sessionId}`} >
       <div className={styles.headerRow}>
         <div className={styles.icon}>
           {/* Replace with your desired icon */}
@@ -66,7 +70,13 @@ const MissionItem = ({ mission }) => {
 
       {/* Overlay that appears on hover */}
       <div className={styles.overlay}>Show Video</div>
+      
+
+      </Link>
+
     </div>
+    
+    
   );
 };
 

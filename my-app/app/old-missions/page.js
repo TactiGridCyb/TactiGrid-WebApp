@@ -15,6 +15,7 @@ const fmtDuration = sec =>
 function shape(log) {
   return {
     _id:        log._id,
+    sessionId:  log.sessionId,
     name:       log.operation,
     missionID:  log.missionId,
     startTime:  fmtTime(log.StartTime),
