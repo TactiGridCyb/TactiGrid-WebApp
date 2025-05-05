@@ -5,6 +5,9 @@ import dbConnect         from '@/lib/mongoose';
 import User              from '@/models/User';
 import TelemetryTrack    from '@/models/Logs';
 import { validateTrack } from '@/lib/validateLogs';
+import { requireUser }   from '@/lib/whoisme';
+
+import { NextResponse } from 'next/server';
 
 /** Read auth cookie → verify JWT → return {_id,email} or null */
 async function getCurrentUser() {
@@ -47,4 +50,38 @@ export async function uploadLog(req) {
   /* 4. insert with userId injected */
   await dbConnect();
   return await TelemetryTrack.create({ ...track, userId: me._id });
+}
+
+export async function POST(req) {
+  const me = await requireUser();
+  if (!me) return NextResponse.json({ error:'not‑signed‑in' }, { status:401 });
+
+  const track = await req.json();
+
+  // If blob arrived base64 → restore Buffer (optional)
+  if (typeof track.blob === 'string')
+    track.blob = Buffer.from(track.blob, 'base64');
+
+  if (!validateTrack(track)) {
+    const errList = validateTrack.errors;
+    console.error('UPLOAD‑VALIDATION‑FAIL', errList);
+    console.error("yes");
+    return NextResponse.json(
+      {
+        error: 'not a valid log',
+        details: validateTrack.errors      // ← Ajv’s explanation
+      },
+      { status: 400 }
+    );
+  }
+  
+
+  await dbConnect();
+  try {
+    await TelemetryTrack.create({ ...track, userId: me._id });
+    return NextResponse.json({ ok:true }, { status:201 });
+  } catch (err) {
+    console.error('UPLOAD‑DB‑FAIL', err);
+    return NextResponse.json({ error: err.message }, { status:400 });
+  }
 }

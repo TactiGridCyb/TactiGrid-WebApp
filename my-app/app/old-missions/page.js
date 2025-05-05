@@ -2,6 +2,7 @@
 import { cookies } from 'next/headers';
 import Navbar from '../components/Navbar.js';
 import MissionItem from '../components/missionItem.js';
+import UploadLogButton from '../components/UploadLogButton.js';
 import styles from '../styles/pagesDesign/OldMissions.module.css';
 
 // ---------- helpers -----------------
@@ -73,7 +74,9 @@ export default async function ViewOldMissions() {
           ))}
         </div>
 
-        <button className={styles.createReportBtn}>Create Report</button>
+        <div className={styles.createReportBtnArea}>
+          <UploadLogButton />
+        </div>
       </main>
     </div>
   );

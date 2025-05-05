@@ -25,7 +25,10 @@ export const trackSchema = {
     /* timing */
     StartTime:  { type:'string', format:'date-time' },
     EndTime:    { type:'string', format:'date-time' },
-    Duration:   { type:'intege  r', minimum:1 },
+    Duration: {
+      type: 'integer',     
+      minimum: 1           
+    },
 
     /* meta */
     LogFiles: { type:'array', items:{ type:'string' } },
