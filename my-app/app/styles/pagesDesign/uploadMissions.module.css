@@ -45,3 +45,39 @@
     background: #3DFAFF; /* Electric Blue */
   }
   
+.fileSection {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.fileInput {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.fileInput::-webkit-file-upload-button {
+  background: #0070f3;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.fileInput::-webkit-file-upload-button:hover {
+  background: #0051a2;
+}
+
+.uploadBtn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+  
