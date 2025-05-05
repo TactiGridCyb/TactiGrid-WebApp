@@ -8,6 +8,9 @@ export default function UploadMission() {
   const [lastReceivedMessage, setLastReceivedMessage] = useState("");
   const [shares, setShares] = useState(null);
   const [recoveredSecret, setRecoveredSecret] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadedShares, setUploadedShares] = useState([]);
+  const [reconstructedFile, setReconstructedFile] = useState(null);
 
   // Simulate an upload action
   const handleUpload = () => {
@@ -59,6 +62,136 @@ export default function UploadMission() {
     }
   };
 
+  const handleFileSelect = (event) => {
+    setSelectedFile(event.target.files[0]);
+  };
+
+  const handleShareUpload = (event) => {
+    const files = Array.from(event.target.files);
+    setUploadedShares(files);
+  };
+
+  const handleFileSplit = async () => {
+    if (!selectedFile) {
+      alert('Please select a file first');
+      return;
+    }
+
+    try {
+      // Read file as ArrayBuffer
+      const arrayBuffer = await selectedFile.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // Convert to base64
+      const base64String = Buffer.from(uint8Array).toString('base64');
+
+      // Split into shares
+      const splitRes = await fetch('/api/shamir/split', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          secretBase64: base64String, 
+          n: 5, 
+          k: 3,
+          fileName: selectedFile.name 
+        })
+      });
+      const { shares } = await splitRes.json();
+      
+      // Debug log
+      console.log('Received shares:', shares);
+      
+      if (!Array.isArray(shares) || shares.length !== 5) {
+        throw new Error(`Expected 5 shares, got ${shares.length}`);
+      }
+
+      setShares(shares);
+
+      // Create downloadable share files one by one
+      for (let index = 0; index < shares.length; index++) {
+        const share = shares[index];
+        const shareBlob = new Blob([JSON.stringify(share)], { type: 'application/json' });
+        const shareUrl = URL.createObjectURL(shareBlob);
+        const link = document.createElement('a');
+        link.href = shareUrl;
+        link.download = `share_${index + 1}_${selectedFile.name}.json`;
+        
+        // Wait for the current download to complete before starting the next one
+        await new Promise((resolve) => {
+          link.onclick = () => {
+            setTimeout(() => {
+              URL.revokeObjectURL(shareUrl);
+              resolve();
+            }, 500); // Increased delay to ensure download starts
+          };
+          
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+      }
+
+      alert('All shares have been downloaded successfully!');
+    } catch (err) {
+      console.error('File split error:', err);
+      alert(`Failed to split file: ${err.message}`);
+    }
+  };
+
+  const handleFileReconstruct = async () => {
+    if (uploadedShares.length < 3) {
+      alert('Please upload at least 3 shares');
+      return;
+    }
+
+    try {
+      const sharesData = [];
+      for (const file of uploadedShares) {
+        const text = await file.text();
+        const share = JSON.parse(text);
+        sharesData.push(share);
+      }
+
+      const recRes = await fetch('/api/shamir/reconstruct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shares: sharesData })
+      });
+      const { secretBase64 } = await recRes.json();
+      
+      // Convert base64 back to file
+      const binaryString = atob(secretBase64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      
+      const reconstructedBlob = new Blob([bytes]);
+      setReconstructedFile({
+        blob: reconstructedBlob,
+        name: uploadedShares[0].name
+          .replace(/^share_\d+_/, '')
+          .replace(/\.json$/, '')
+      });
+    } catch (err) {
+      console.error('File reconstruction error:', err);
+      alert('Failed to reconstruct file');
+    }
+  };
+
+  const downloadReconstructedFile = () => {
+    if (!reconstructedFile) return;
+    
+    const url = URL.createObjectURL(reconstructedFile.blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = reconstructedFile.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Periodically check for new UDP messages
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -100,9 +233,57 @@ export default function UploadMission() {
             Open Socket
           </button>
           <button className={styles.uploadBtn} onClick={handleShamir}>
-            Upload Shamir
+            Test Shamir String
           </button>
         </div>
+
+        <section className={styles.uploadContainer}>
+          <h2>File Split and Reconstruct</h2>
+          <div className={styles.fileSection}>
+            <h3>Split File</h3>
+            <input 
+              type="file" 
+              onChange={handleFileSelect} 
+              className={styles.fileInput}
+            />
+            <button 
+              className={styles.uploadBtn} 
+              onClick={handleFileSplit}
+              disabled={!selectedFile}
+            >
+              Split File
+            </button>
+          </div>
+
+          <div className={styles.fileSection}>
+            <h3>Reconstruct File</h3>
+            <input 
+              type="file" 
+              multiple 
+              onChange={handleShareUpload}
+              className={styles.fileInput}
+            />
+            <button 
+              className={styles.uploadBtn} 
+              onClick={handleFileReconstruct}
+              disabled={uploadedShares.length < 3}
+            >
+              Reconstruct File
+            </button>
+          </div>
+
+          {reconstructedFile && (
+            <div className={styles.fileSection}>
+              <h3>Reconstructed File Ready</h3>
+              <button 
+                className={styles.uploadBtn} 
+                onClick={downloadReconstructedFile}
+              >
+                Download {reconstructedFile.name}
+              </button>
+            </div>
+          )}
+        </section>
 
         <section className={styles.uploadContainer}>
           <h2>Output From the Watch:</h2>
