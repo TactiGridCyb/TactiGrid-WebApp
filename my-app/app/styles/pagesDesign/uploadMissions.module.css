@@ -1,0 +1,83 @@
+/* Header section: dark gradient + white text */
+.header {
+  text-align: center;
+  padding: 1rem;
+  font-size: 8rem;
+  color: black;
+  font-family: bebas;
+  text-shadow: 0 0 10px rgba(48, 48, 48, 0.3);
+}
+  
+  /* Main container: sets width, spacing, text color */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    color: #fff;
+  }
+  
+  /* Container for the upload button area */
+  .uploadContainer {
+    background: #0e2c0e; /* or #111 / #14453D if you prefer */
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    justify-content: space-around;
+  }
+  
+  /* Upload button styling */
+  .uploadBtn {
+    background: #48BEFF; /* Photon Blue from your palette */
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.2s;
+  }
+  
+  /* Hover effect */
+  .uploadBtn:hover {
+    background: #3DFAFF; /* Electric Blue */
+  }
+  
+.fileSection {
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.fileInput {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.fileInput::-webkit-file-upload-button {
+  background: #0070f3;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.fileInput::-webkit-file-upload-button:hover {
+  background: #0051a2;
+}
+
+.uploadBtn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+  
