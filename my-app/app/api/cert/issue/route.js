@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.DB_NAME;
-const PASS = '12345';
+const PASS = '123456';
 
 let cachedClient = null;
 async function getClient() {
