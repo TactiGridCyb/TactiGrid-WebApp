@@ -4,10 +4,9 @@ import '../styles/componentsDesign/CreateMissionDialog.css';
 import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { useForm } from 'react-hook-form';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
-import { geocode } from '@/lib/missionHelpers';
+import MapPicker from '../components/MapPicker';
 import PersonPicker from '../components/PersonPicker';
 
 const steps = [
@@ -37,12 +36,7 @@ export default function CreateMissionDialog({ isOpen, onClose }) {
   const [selSoldiers, setSelSoldiers]     = useState([]);
   const [selCommanders, setSelCommanders] = useState([]);
 
-  /* helpers */
-  const PickOnMap = ()=>{ useMapEvents({
-    click: e => setValue('location',{
-      lat:e.latlng.lat,lng:e.latlng.lng,address:watch('location').address
-    })
-  }); return null; };
+ 
 
   const closeAll = () => {
     reset(); setSelSoldiers([]); setSelCommanders([]); setStep(0); onClose();
@@ -91,36 +85,12 @@ export default function CreateMissionDialog({ isOpen, onClose }) {
               <input type="time" step="60" {...register('duration',{required:true})} className="input"/>
             </div>)}
 
-          {step===4&&(
-            <div className="field">
-              <label>General Location</label>
-              <div className="address-row">
-                <input
-                  className="input flex"
-                  value={watch('location').address}
-                  placeholder="Search address"
-                  onChange={e=>setValue('location',{...watch('location'),address:e.target.value})}
-                />
-                <button type="button" className="btn" onClick={async()=>{
-                  try{
-                    const {lat,lng}=await geocode(watch('location').address);
-                    setValue('location',{lat,lng,address:watch('location').address});
-                  }catch(err){ alert(err.message); }
-                }}>Search</button>
-              </div>
-              <div className="map-wrapper">
-                <MapContainer
-                  center={[watch('location').lat,watch('location').lng]}
-                  zoom={13}
-                  scrollWheelZoom
-                  className="map"
-                >
-                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
-                  <Marker position={[watch('location').lat,watch('location').lng]}/>
-                  <PickOnMap/>
-                </MapContainer>
-              </div>
-            </div>)}
+          {step === 4 && (
+  <MapPicker
+    value={watch('location')}
+    onChange={(loc) => setValue('location', loc)}
+  />
+)}
 
           {/* ===== Soldiers ===== */}
           {step===5&&(

@@ -212,3 +212,29 @@ label {
 .option input[type="checkbox"]:checked::before {
   transform: scale(1);
 }
+
+/* --- CSS-only map pin -------------------------------------------- */
+.css-pin {
+  /* the round head */
+ width: 24px;
+  height: 24px;
+  background: red;
+  border: 2px solid white;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  position: relative;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+  animation: pulse 3s infinite;
+}
+
+/* the pointed tail */
+.css-pin::after {
+  content: '';
+  width: 8px;
+  height: 13px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 6px;
+  left: 6px;    /* same red */
+}
