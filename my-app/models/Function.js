@@ -6,7 +6,7 @@ const FunctionSchema = new mongoose.Schema({
   type:           { type: String, enum: ['FHF','GMK'], required: true },
   description:    { type: String, required: true },
   parameters:     { type: Array,  default: [] },
-  implementation: { type: String, required: true },   // ← NEW
+  implementation: { type: String, required: true },   
   createdAt:      { type: Date,   default: Date.now }
 }, {
   collection: 'configuration-functions'

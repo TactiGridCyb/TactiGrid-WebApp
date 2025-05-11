@@ -9,9 +9,13 @@ const ConfigurationSchema = new mongoose.Schema({
   collection: 'configurations'
 });
 
-const Configuration = 
-  mongoose.models.Configuration ||
+// אינדקס ייחודי על שני השדות
+ConfigurationSchema.index(
+  { gmkFunction: 1, fhfFunction: 1 },
+  { unique: true }
+);
+
+const Configuration = mongoose.models.Configuration ||
   mongoose.model('Configuration', ConfigurationSchema);
 
-// ← this line makes it a default export
 export default Configuration;
