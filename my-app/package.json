@@ -15,6 +15,7 @@
     "jsonwebtoken": "^9.0.2",
     "jws": "^4.0.0",
     "leaflet": "^1.9.4",
+    "leaflet-defaulticon-compatibility": "^0.1.2",
     "lucide-react": "^0.503.0",
     "mongoose": "^8.13.2",
     "next": "15.2.4",
