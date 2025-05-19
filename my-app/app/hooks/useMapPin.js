@@ -19,5 +19,5 @@ export default function useMapPin(initial = { lat: 31.7717, lng: 35.217 }) {
   /** attach the real Leaflet map instance */
   const registerMap = useCallback((map) => { mapRef.current = map; }, []);
 
-  return { pos, movePin, registerMap };
+  return { pos, movePin, registerMap ,mapRef };
 }

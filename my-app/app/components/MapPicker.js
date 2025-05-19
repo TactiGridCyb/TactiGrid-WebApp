@@ -28,7 +28,7 @@ function ClickHandler({ move }) {
 }
 
 export default function MapPicker({ value, onChange }) {
-  const { pos, movePin, registerMap } = useMapPin(value);
+  const { pos, movePin, registerMap, mapRef  } = useMapPin(value);
 
   /* update both hook + RHF */
   const setPos = (lat, lng) => {
@@ -42,6 +42,9 @@ export default function MapPicker({ value, onChange }) {
     try {
       const { lat, lng } = await geocode(inputEl.value);
       setPos(lat, lng);
+
+
+    
     } catch (err) {
       alert(err.message);
     }
