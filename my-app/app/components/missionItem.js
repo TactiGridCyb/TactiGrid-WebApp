@@ -2,7 +2,7 @@
 "use client";
 import React from 'react';
 import Link from 'next/link';
-import styles from '../styles/componentsDesign/missionItem.module.css';
+import styles from '../styles/componentsDesign/missionItemsCard.module.css';
 
 const MissionItem = ({ mission }) => {
   const {

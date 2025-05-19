@@ -56,7 +56,7 @@ const durationMs = Math.max(endMs - startMs, 0);
     const now = startMs + t;
     const latest = {};
     for (const row of data) {
-      const ts = toMs(row.time_sent);
+      const ts = new Date(row.time_sent).getTime();
       if (ts <= now) latest[row.soldierId] = row;
       else break;
     }
