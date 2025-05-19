@@ -17,7 +17,7 @@ const MissionSchema = new Schema(
     missionId:       { type: String, required: true, unique: true , alias: 'id'  }, // “id”
     name:            { type: String, required: true },
     startTime:       { type: Date,   required: true },
-    endTime:       { type: Date,   required: true },
+    endTime:       { type: Date,    default: null },
     duration:        { type: String, required: true },               // "HH:MM"
 
     location:        { type: LocationSub, required: true },

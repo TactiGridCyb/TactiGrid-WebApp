@@ -31,7 +31,7 @@ async function getNewMissions() {
   const cookieHeader = cookieStore.toString();
   const base         = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-  const res = await fetch(`${base}/api/missions/new`, {
+  const res = await fetch(`${base}/api/newmissions/new`, {
     headers: { cookie: cookieHeader },
     cache: 'no-store'
   });

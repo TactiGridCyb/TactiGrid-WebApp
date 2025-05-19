@@ -17,6 +17,7 @@ async function getMission(id) {
 export default async function MissionPage({ params }) {
   const paramsStore = await params;
   const mission = await getMission(paramsStore.sessionId);
+  console.log(mission);
   if (!mission) return <p>Mission not found or not yours.</p>;
 
   return (

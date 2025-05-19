@@ -11,6 +11,17 @@ import 'leaflet/dist/leaflet.css';
  *     data: [ { soldierId, latitude, longitude, heartRate, time_sent }, … ]
  *   }
  */
+
+const toMs = (v) => {
+  if (!v) return 0;                           // null / undefined
+  if (typeof v === 'number')  return v;       // already ms
+  if (v instanceof Date)      return v.getTime();
+  if (typeof v === 'string')  return new Date(v).getTime(); // ISO string
+  if (typeof v === 'object' && '$date' in v)
+    return new Date(v.$date).getTime();       // Mongo Extended JSON
+  return 0;
+};
+
 export default function LogPlayer({ mission }) {
   const mapRef  = useRef(null);
   const layer   = useRef(L.layerGroup());
@@ -18,8 +29,10 @@ export default function LogPlayer({ mission }) {
   const [playing, setPlaying] = useState(false);
 
   const { StartTime, EndTime, intervalMs, data } = mission;
-  const startMs    = new Date(StartTime).getTime();
-  const durationMs = new Date(EndTime).getTime() - startMs;
+const startMs    = toMs(StartTime);
+const endMs      = toMs(EndTime);
+const durationMs = Math.max(endMs - startMs, 0);
+
 
   /* ---------- init Leaflet map ---------- */
   useEffect(() => {
@@ -43,7 +56,7 @@ export default function LogPlayer({ mission }) {
     const now = startMs + t;
     const latest = {};
     for (const row of data) {
-      const ts = new Date(row.time_sent).getTime();
+      const ts = toMs(row.time_sent);
       if (ts <= now) latest[row.soldierId] = row;
       else break;
     }
@@ -103,13 +116,13 @@ export default function LogPlayer({ mission }) {
       <div id="mission-map" style={{ flex: 1 }} />
 
       <input
-        type="range"
-        min={0}
-        max={durationMs}
-        step={intervalMs}
-        value={t}
-        onChange={(e) => setT(+e.target.value)}
-      />
+  type="range"
+  min={0}
+  max={durationMs || 1}                 // fallback keeps React happy
+  step={intervalMs || 1}
+  value={Math.min(t, durationMs || 1)}
+  onChange={(e) => setT(+e.target.value)}
+/>
 
       <div style={{ display: 'flex', gap: '8px', padding: '8px' }}>
         <button onClick={playing ? () => setPlaying(false) : play}>

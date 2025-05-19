@@ -6,27 +6,29 @@ import UploadLogButton from '../components/UploadLogButton.js';
 import styles from '../styles/pagesDesign/OldMissions.module.css';
 
 // ---------- helpers -----------------
-const fmtTime = d =>
+const fmtTime = (d) =>
   new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-const fmtDuration = sec =>
-  `${Math.floor(sec / 60)}h${sec % 60}m`;
+const fmtDuration = (sec) =>
+  `${Math.floor(sec / 60)}m${sec % 60}s`;        // 87 → 1m27s
 
-// Convert DB shape → props your card expects
-function shape(log) {
+// Accept *either* the new wrapped doc or the legacy flat doc
+function shape(doc) {
+  const log = doc.log ?? doc;                    // unwrap if needed
+
   return {
-    _id:        log._id,
-    sessionId:  log.sessionId,
-    name:       log.operation,
-    missionID:  log.missionId,
-    startTime:  fmtTime(log.StartTime),
-    endTime:    fmtTime(log.EndTime),
-    duration:   fmtDuration(log.Duration),
-    logFiles:   log.LogFiles?.[0] ?? '—',
-    gmk:        log.GMK ?? '—',
-    soldiersList: log.Soldiers.map(s => s.callsign).join(', '),
-    location:   log.Location?.name ?? '—',
-    configID:   log.ConfigID ?? '—'
+    _id:          doc._id,                       // wrapper’s Mongo _id
+    sessionId:    log.sessionId,
+    name:         log.operation,
+    missionID:    log.missionId,
+    startTime:    fmtTime(log.StartTime),
+    endTime:      fmtTime(log.EndTime),
+    duration:     fmtDuration(log.Duration),
+    logFiles:     log.LogFiles?.[0] ?? '—',
+    gmk:          log.GMK ?? '—',
+    soldiersList: (log.Soldiers?.map(s => s.callsign).join(', ')) || '—',
+    location:     log.Location?.name ?? '—',
+    configID:     log.ConfigID ?? '—'
   };
 }
 

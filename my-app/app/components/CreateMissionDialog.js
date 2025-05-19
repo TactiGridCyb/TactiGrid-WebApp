@@ -36,7 +36,7 @@ export default function CreateMissionDialog({ isOpen, onClose }) {
     formState:{ errors }
   } = useForm({
     defaultValues:{
-      id:'', name:'', startTime:'', duration:'01:00',
+      id:'', name:'', startTime:'', duration:'01:00',endTime: null, 
       location:{ lat:31.7717,lng:35.217,address:'' },
       soldiers:[], commanders:[], configurationId:''
     }
@@ -95,7 +95,7 @@ const stepFilled = useStepFilled(step);
     alert('Pick at least one commander');
     return;
     }
-    const res = await fetch('/api/missions', {
+    const res = await fetch('/api/newmissions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
