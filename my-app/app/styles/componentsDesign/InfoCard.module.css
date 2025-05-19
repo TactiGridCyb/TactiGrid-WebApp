@@ -1,0 +1,51 @@
+/* styles.css */
+
+.card {
+    width: 320px;
+    padding: 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fff;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, color 0.3s ease;
+  }
+  
+  .card:hover{
+    transform: scale(1.1);
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+    
+  }
+  
+  .iconcontainer {
+    margin-right: 8px;
+    text-shadow: 0 0 10px rgba(29, 108, 147, 0.5);
+  }
+  
+  .icon {
+    font-size: 24px;
+  }
+  
+  .mainheader {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(92, 92, 92, 0.2);
+    color: black; /* Main title in black */
+    font-family: 'futura';
+    letter-spacing: 1px;
+    
+  }
+  
+  .text {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    line-height: 1.4;
+    text-shadow: 0 0 10px rgba(132, 132, 132, 0.2);
+    color: gray; /* Subtitles in gray */
+  }
+ 

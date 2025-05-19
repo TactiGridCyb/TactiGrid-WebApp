@@ -1,0 +1,108 @@
+/* ---------- overlay ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+}
+
+/* ---------- card ---------- */
+.card {
+  background: #ffffff;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 460px;
+  padding: 2.5rem 2rem 2rem;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  font-family: system-ui, sans-serif;
+  color: #1f2937;           /* gray‑800 */
+}
+
+/* ---------- close “×” ---------- */
+.closeBtn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  line-height: 1;
+  color: #6b7280;           /* gray‑500 */
+  cursor: pointer;
+}
+
+.closeBtn:hover { color: #111827; }          /* gray‑900 */
+
+/* ---------- title ---------- */
+.cardTitle {
+  margin: 0 0 1.5rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------- error message ---------- */
+.errorMsg {
+  margin-bottom: 1rem;
+  color: #ef4444;           /* red‑500 */
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* ---------- form ---------- */
+.form { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.formGroup { display: flex; flex-direction: column; }
+
+.formGroup label {
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;           /* gray‑700 */
+}
+
+.formGroup input {
+  padding: 0.55rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;     /* gray‑300 */
+  border-radius: 6px;
+  background: #f9fafb;           /* gray‑50 */
+  color: #111827;                /* gray‑900 */
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.formGroup input:focus {
+  border-color: #3b82f6;         /* blue‑500 */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+/* ---------- submit ---------- */
+.submitBtn {
+  margin-top: 0.5rem;
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #3b82f6;           /* blue‑500 */
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.submitBtn:hover { background: #2563eb; }    /* blue‑600 */
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 480px) {
+  .card { padding: 2rem 1.5rem; }
+}

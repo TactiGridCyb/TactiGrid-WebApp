@@ -1,0 +1,86 @@
+.missionCard {
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  background-color: #111;
+  color: #fff;
+  font-family: Arial, sans-serif;
+  
+  
+}
+.header {
+  text-align: center;
+  padding: 1rem;
+  font-size: 8rem;
+  color: black;
+  font-family: bebas;
+  text-shadow: 0 0 10px rgba(48, 48, 48, 0.3);
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.icon {
+  margin-right: 1rem;
+  
+}
+
+.icon img {
+  width: 40px;
+  height: 40px;
+}
+
+.titleContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 1.8rem; /* Bigger title font */
+  margin: 0;
+}
+
+.missionId {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+.detailsRow {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.5rem 0;
+}
+
+.detail {
+  flex: 1;
+}
+
+.detailLabel {
+  font-weight: bold;
+  margin-right: 0.25rem;
+}
+
+.buttonContainer {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.viewVideoBtn {
+  background-color: #000;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.viewVideoBtn:hover {
+  background-color: #333;
+}
