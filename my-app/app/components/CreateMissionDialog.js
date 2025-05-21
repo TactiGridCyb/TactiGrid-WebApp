@@ -10,9 +10,10 @@ import 'leaflet/dist/leaflet.css';
 import MapPicker from '../components/MapPicker';
 import PersonPicker from '../components/PersonPicker';
 
+import ConfigPicker  from '../components/ConfigPicker';
 const steps = [
   'ID','Name','StartTime','Duration',
-  'GeneralLocation','Soldiers','Commanders','configurationId'
+  'GeneralLocation','Soldiers','Commanders','Config','config'
 ];
 
 
@@ -24,7 +25,8 @@ const requiredPerStep = [
   ['location.lat', 'location.lng'],      // step 4
   ['soldiers'],                          // step 5  (at least one)
   ['commanders'],                        // step 6  (at least one)
-  ['configurationId'],                                    // step 7  (config optional)
+  ['configurationId'],          // move down one index
+  ['configurationId']                                   // step 7  (config optional)
 ];
 
 
@@ -67,7 +69,7 @@ function useStepFilled(stepIndex) {
   });
 }
 const stepFilled = useStepFilled(step);
-
+const [selConfig, setSelConfig] = useState('');
 
 
 
@@ -187,18 +189,28 @@ const stepFilled = useStepFilled(step);
               />
             </div>)}
 
-          {step===7&&(
-            <div className="field">
-              <label>Configuration ID</label>
-              <input
-      {...register('configurationId', { required: true })}
-     className="input"
+          {step === 7 && (
+  <div className="field">
+    <label>Pick Configuration</label>
+    <ConfigPicker
+      value={watch('configurationId')}
+      onChange={(id) => {
+        setValue('configurationId', id);
+        setSelConfig(id);
+      }}
     />
-    {errors.configurationId && (
-     <span className="error">Required</span>
-    )}
   </div>
-          )}
+  
+)}
+
+{step === 8 && (
+  <div className="field">
+    <label>Pick Configuration</label>
+    
+    
+  </div>
+  
+)}
 
           {/* ===== nav ===== */}
           <button type="button" className="nav nav-left" onClick={prev} disabled={step === 0}>◀</button>
