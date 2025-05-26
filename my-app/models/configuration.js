@@ -1,15 +1,19 @@
-// models/Configuration.js
+// File: models/Configuration.js
+
 import mongoose from 'mongoose';
 
 const ConfigurationSchema = new mongoose.Schema({
-  gmkFunction: { type: String, required: true },
-  fhfFunction: { type: String, required: true },
-  createdAt:   { type: Date,   default: Date.now }
+  gmkFunction:  { type: String, required: true },
+  fhfFunction:  { type: String, required: true },
+  fhfInterval:  { type: Number, required: true },           
+  parameters:   { type: mongoose.Schema.Types.Mixed,        
+                  default: {} },
+  createdAt:    { type: Date,   default: Date.now }
 }, {
   collection: 'configurations'
 });
 
-// אינדקס ייחודי על שני השדות
+// unique on GMK + FHF to prevent duplicates
 ConfigurationSchema.index(
   { gmkFunction: 1, fhfFunction: 1 },
   { unique: true }
