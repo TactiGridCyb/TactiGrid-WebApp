@@ -1,10 +1,9 @@
-// app/old-missions/page.jsx  (Server Component – no "use client")
-import { cookies } from 'next/headers';
-import Navbar from '../components/Navbar.js';
-import MissionItem from '../components/missionItem.js';
-
-import styles from '../styles/pagesDesign/OldMissions.module.css';
-
+// Server Component
+import { cookies }          from 'next/headers';
+import Navbar               from '../components/Navbar';
+import MissionItem          from '../components/missionItem';
+import CreateMissionButton  from '../components/CreateMissionButton';
+import styles               from '../styles/pagesDesign/OldMissions.module.css';
 
 
 /* -------- map raw Mongo docs → a clean, predictable shape -------- */
@@ -18,12 +17,12 @@ const shape = (doc) => ({
 });
 
 /* -------- fetch only missions in progress -------- */
-async function getFinishedMissions() {
+async function getActiveMissions() {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'http://localhost:3000';
 
-  const res = await fetch(`${base}/api/missionFunctions?finished=true`, {
+  const res = await fetch(`${base}/api/missionFunctions?finished=false`, {
     headers: { cookie: cookieHeader },
     cache:   'no-store',
   });
@@ -35,14 +34,14 @@ async function getFinishedMissions() {
 }
 
 export default async function MissionsInProgressPage() {
-  const missions = await getFinishedMissions();
+  const missions = await getActiveMissions();
 
   return (
     <div>
       <Navbar />
 
       <header className={styles.header}>
-        <h1>Missions — Finished</h1>
+        <h1>Missions — In Progress</h1>
       </header>
 
       <main className={styles.main}>
@@ -58,7 +57,7 @@ export default async function MissionsInProgressPage() {
           ))}
         </div>
 
-        
+        <CreateMissionButton />
       </main>
     </div>
   );

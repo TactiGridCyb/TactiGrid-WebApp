@@ -1,221 +1,261 @@
 'use client';
 
 import '../styles/componentsDesign/CreateMissionDialog.css';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Dialog } from '@headlessui/react';
-import { useForm , useWatch } from 'react-hook-form';
+import { useState }              from 'react';
+import { useRouter }             from 'next/navigation';
+import { Dialog }                from '@headlessui/react';
+import { useForm, useWatch }     from 'react-hook-form';
 import 'leaflet/dist/leaflet.css';
 
-import MapPicker from '../components/MapPicker';
-import PersonPicker from '../components/PersonPicker';
-
+import MapPicker     from '../components/MapPicker';
+import PersonPicker  from '../components/PersonPicker';
 import ConfigPicker  from '../components/ConfigPicker';
+
+/* ─── wizard steps ─── */
 const steps = [
-  'ID','Name','StartTime','Duration',
-  'GeneralLocation','Soldiers','Commanders','Config','config'
+  'Name',          // 0
+  'StartTime',     // 1
+  'Duration',      // 2
+  'Location',      // 3
+  'Soldiers',      // 4
+  'Commanders',    // 5
+  'Configuration',
+  'c',
+  
 ];
 
-
+/* ─── required fields per step ─── */
 const requiredPerStep = [
-  ['id'],                                // step 0
-  ['name'],                              // step 1
-  ['startTime'],                         // step 2
-  ['duration'],                          // step 3
-  ['location.lat', 'location.lng'],      // step 4
-  ['soldiers'],                          // step 5  (at least one)
-  ['commanders'],                        // step 6  (at least one)
-  ['configurationId'],          // move down one index
-  ['configurationId']                                   // step 7  (config optional)
+  ['missionName'],                       // 0
+  ['StartTime'],                         // 1
+  ['Duration'],                          // 2
+  ['location.lat', 'location.lng'],      // 3
+  ['soldiers'],                          // 4
+  ['commanders'],                        // 5
+  ['Configuration'],    // 6
+  ['c'],
+                  
 ];
-
-
 
 export default function CreateMissionDialog({ isOpen, onClose }) {
-  /* form */
+  /* form ---------------------------------------------------------- */
   const {
-    register, handleSubmit, watch, setValue, reset, control, trigger, 
-    formState:{ errors }
+    register, handleSubmit, watch, setValue, reset, control, trigger,
+    formState: { errors },
   } = useForm({
-    defaultValues:{
-      id:'', name:'', startTime:'', duration:'01:00',endTime: null, 
-      location:{ lat:31.7717,lng:35.217,address:'' },
-      soldiers:[], commanders:[], configurationId:''
-    }
+    defaultValues: {
+      missionName: '',
+      StartTime:   '',
+      Duration:    '01:00',                          // HH:MM
+      location:    { lat: 31.7717, lng: 35.217, address: '' },
+      soldiers:    [],
+      commanders:  [],
+      Configuration: '',
+      
+    },
   });
 
-  /* wizard nav */
-  const [step,setStep] = useState(0);
+  const router = useRouter();
+
+  /* wizard nav ----------------------------------------------------- */
+  const [step, setStep] = useState(0);
   const next = async () => {
-  // validate only the fields for the *current* step
-  const valid = await trigger(requiredPerStep[step]);
-  if (!valid) return;                   // stay on page if invalid
-  setStep((s) => Math.min(s + 1, steps.length - 1));
-};
+    
 
+    const valid = await trigger(requiredPerStep[step]);
+    if (!valid) return;
 
-function useStepFilled(stepIndex) {
-  const names  = requiredPerStep[stepIndex];     // e.g. ['id'] or ['soldiers']
-  const values = useWatch({ control, name: names });
+    setStep(step + 1);
+  };
+  const prev = () => setStep((s) => Math.max(s - 1, 0));
 
-  // when names.length === 1, `values` is the scalar itself
-  if (!Array.isArray(names) || names.length === 0) return true;
+  /* step-completion helper ---------------------------------------- */
+  function useStepFilled(idx) {
+    const names = requiredPerStep[idx];
+    const vals  = useWatch({ control, name: names });
 
-  return names.every((field, i) => {
-    const val = Array.isArray(values) ? values[i] : values;  // align indexes
-    if (Array.isArray(val))          return val.length > 0;   // soldiers / commanders
-    if (typeof val === 'object')     return Object.values(val).every(Boolean); // location.{lat,lng}
-    return Boolean(val);                                       // plain string/number
-  });
-}
-const stepFilled = useStepFilled(step);
-const [selConfig, setSelConfig] = useState('');
+    return names.every((_, i) => {
+      const v = Array.isArray(vals) ? vals[i] : vals;
+      if (Array.isArray(v))     return v.length > 0;
+      if (typeof v === 'object')return Object.values(v).every(Boolean);
+      return Boolean(v);
+    });
+  }
+  const stepFilled = useStepFilled(step);
 
-
-
-  const prev = ()=>setStep(s=>Math.max(s-1,0));
-
-  /* selected object panes */
-  const [selSoldiers, setSelSoldiers]     = useState([]);
+  /* picker previews ------------------------------------------------ */
+  const [selSoldiers,   setSelSoldiers]   = useState([]);
   const [selCommanders, setSelCommanders] = useState([]);
 
- const router = useRouter();
-
+  /* helpers -------------------------------------------------------- */
   const closeAll = () => {
-    reset(); setSelSoldiers([]); setSelCommanders([]); setStep(0); onClose();
+    reset();
+    setSelSoldiers([]);
+    setSelCommanders([]);
+    setStep(0);
+    onClose();
   };
   const handleClose = () =>
     confirm('Discard all entered data?') && closeAll();
 
-  const onSubmit = async (data) => {
-  try {
-    if (data.soldiers.length === 0) {
-    alert('Pick at least one soldier');
-    return;
+  /* submit --------------------------------------------------------- */
+  const onSubmit = async (raw) => {
+    try {
+      if (raw.soldiers.length === 0)   { alert('Pick at least one soldier');   return; }
+      if (raw.commanders.length === 0) { alert('Pick at least one commander'); return; }
+
+      /* HH:MM → seconds */
+      const [h, m] = raw.Duration.split(':').map(Number);
+      const durationSec = h * 3600 + m * 60;
+
+      /* build payload that matches the Mission model */
+      const payload = {
+        missionName: raw.missionName,
+        StartTime:   new Date(raw.StartTime),
+        Duration:    durationSec,
+        Location:    {
+          name: raw.location.address || 'UnNamed Point',
+          lat:  raw.location.lat,
+          lon:  raw.location.lng,
+        },
+        Soldiers:     raw.soldiers,
+        Commanders:   raw.commanders,
+        Configuration: raw.Configuration,
+        Log:        null,          // ← add this line
+        IsFinished: false,         // ← and this one
+      };
+
+      const res = await fetch('/api/missionFunctions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await res.text());
+
+      alert('Mission created ✔️');
+      router.refresh();
+      closeAll();
+    } catch (err) {
+      alert('Error: ' + err.message);
     }
-    if (data.commanders.length === 0) {
-    alert('Pick at least one commander');
-    return;
-    }
-    const res = await fetch('/api/newmissions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error(await res.text());
+  };
 
-   alert('Mission created ✔');
-
-    /* force-refresh: either hard reload or router.refresh() */
-    // window.location.reload();        // ← full hard reload
-    router.refresh();                   // ← Next.js (app router) smart refresh
-
-  } catch (err) {
-    alert('Error: ' + err.message);
- } finally {
-    reset();
-    setSelSoldiers([]);      // clear local lists if you kept the hook refactor
-    setSelCommanders([]);
-    setStep(0);
-    onClose();
-  }
-};
-
-  /* render */
+  /* render --------------------------------------------------------- */
   return (
-    <Dialog open={isOpen} onClose={()=>{}} className="dialog">
-      <Dialog.Panel className="dialog-panel" onKeyDownCapture={(e) => {if (e.key === 'Escape') {e.stopPropagation();}}}>
+    <Dialog open={isOpen} onClose={() => {}} className="dialog">
+      <Dialog.Panel
+        className="dialog-panel"
+        onKeyDownCapture={(e) => {
+          if (e.key === 'Escape') e.stopPropagation();
+        }}
+      >
         <button className="close-btn" onClick={handleClose}>✕</button>
         <h2 className="title">Create Mission</h2>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          {/* ===== Step 0-4: Basic info + map ===== */}
-          {step===0&&(
+          {/* —— Step 0: Name —— */}
+          {step === 0 && (
             <div className="field">
-              <label>ID</label>
-              <input {...register('id',{required:true})} className="input"/>
-              {errors.id && <span className="error">Required</span>}
-            </div>)}
+              <label>Mission Name</label>
+              <input
+                {...register('missionName', { required: true })}
+                className="input"
+              />
+              {errors.missionName && <span className="error">Required</span>}
+            </div>
+          )}
 
-          {step===1&&(
-            <div className="field">
-              <label>Name</label>
-              <input {...register('name',{required:true})} className="input"/>
-              {errors.name && <span className="error">Required</span>}
-            </div>)}
-
-          {step===2&&(
+          {/* —— Step 1: StartTime —— */}
+          {step === 1 && (
             <div className="field">
               <label>Start Time</label>
-              <input type="datetime-local" {...register('startTime',{required:true})} className="input"/>
-            </div>)}
+              <input
+                type="datetime-local"
+                {...register('StartTime', { required: true })}
+                className="input"
+              />
+            </div>
+          )}
 
-          {step===3&&(
+          {/* —— Step 2: Duration —— */}
+          {step === 2 && (
             <div className="field">
               <label>Duration (HH:MM)</label>
-              <input type="time" step="60" {...register('duration',{required:true})} className="input"/>
-            </div>)}
+              <input
+                type="time"
+                step="60"
+                {...register('Duration', { required: true })}
+                className="input"
+              />
+            </div>
+          )}
 
+          {/* —— Step 3: Map —— */}
+          {step === 3 && (
+            <MapPicker
+              value={watch('location')}
+              onChange={(loc) => setValue('location', loc)}
+            />
+          )}
+
+          {/* —— Step 4: Soldiers —— */}
           {step === 4 && (
-  <MapPicker
-    value={watch('location')}
-    onChange={(loc) => setValue('location', loc)}
-  />
-)}
-
-          {/* ===== Soldiers ===== */}
-          {step===5&&(
             <div className="field">
               <label>Pick Soldiers</label>
               <PersonPicker
                 role="Soldier"
                 values={watch('soldiers')}
-                setValues={v=>setValue('soldiers',v)}
+                setValues={(v) => setValue('soldiers', v)}
                 selected={selSoldiers}
                 setSelected={setSelSoldiers}
               />
-            </div>)}
+            </div>
+          )}
 
-          {/* ===== Commanders ===== */}
-          {step===6&&(
+          {/* —— Step 5: Commanders —— */}
+          {step === 5 && (
             <div className="field">
               <label>Pick Commanders</label>
               <PersonPicker
                 role="Commander"
                 values={watch('commanders')}
-                setValues={v=>setValue('commanders',v)}
+                setValues={(v) => setValue('commanders', v)}
                 selected={selCommanders}
                 setSelected={setSelCommanders}
               />
-            </div>)}
+            </div>
+          )}
+
+          {/* —— Step 6: Configuration —— */}
+          {step === 6 && (
+            <div className="field">
+              <label>Pick Configuration</label>
+              <ConfigPicker
+                value={watch('Configuration')}
+                onChange={(id) => setValue('Configuration', id)}
+              />
+            </div>
+          )}
 
           {step === 7 && (
-  <div className="field">
-    <label>Pick Configuration</label>
-    <ConfigPicker
-      value={watch('configurationId')}
-      onChange={(id) => {
-        setValue('configurationId', id);
-        setSelConfig(id);
-      }}
-    />
-  </div>
-  
-)}
+            <div className="field">
+              <label>Pick Configuration</label>
+              
+            </div>
+          )}
 
-{step === 8 && (
-  <div className="field">
-    <label>Pick Configuration</label>
-    
-    
-  </div>
-  
-)}
+          {/* —— navigation buttons —— */}
+          <button
+            type="button"
+            className="nav nav-left"
+            onClick={prev}
+            disabled={step === 0}
+          >
+            ◀
+          </button>
 
-          {/* ===== nav ===== */}
-          <button type="button" className="nav nav-left" onClick={prev} disabled={step === 0}>◀</button>
-          {step < steps.length - 1
-            ? <button
+          {step < steps.length -1  ? (
+            <button
               type="button"
               className="nav nav-right"
               onClick={next}
@@ -223,7 +263,11 @@ const [selConfig, setSelConfig] = useState('');
             >
               ▶
             </button>
-            : <button type="submit"  className="nav nav-right">✔</button>}
+          ) : (
+            <button type="submit" className="nav nav-right">
+              ✔
+            </button>
+          )}
         </form>
       </Dialog.Panel>
     </Dialog>
