@@ -4,6 +4,7 @@ import tls              from 'tls';
 import mongoose         from 'mongoose';
 import Certificate      from '@/models/Certificate';
 import { issueCertificate } from '@/lib/issueCertificate';
+import Soldier from '@/models/Soldier';
 
 /* ---------- tweakables ---------- */
 const GMK      = 'A'.repeat(32);
@@ -14,7 +15,11 @@ const PORT     = 8743;          // TLS port
 
 /* util */
 const toPemList = (docs) => docs.map((d) => d.certPem);
-const stubName  = (id) => `P#${id.toString().slice(-4)}`;
+const stubName = async (id) => {
+  const soldier = await Soldier.findById(id).lean();
+  console.log(soldier);
+  return soldier?.fullName.toString() || `P#${id.toString().slice(-4)}`;
+};
 
 /* ------------------------------------------------------------------ *
  *  startMissionProvision({ missionId, soldiers, commanders })        *
@@ -38,13 +43,21 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
   async function upsert(id, fullName, isCommander) {
     let doc = await Certificate.findOne({ subjectId: id, missionId });
     if (doc) return doc;
+    fullName = fullName + " " +id;
     const signed = await issueCertificate({ fullName, subjectId: id, isCommander });
     doc = await Certificate.create({ subjectId: id, fullName, isCommander, missionId, ...signed });
     return doc;
   }
 
-  const soldierDocs   = await Promise.all(soldiers  .map((id) => upsert(id, stubName(id), false)));
-  const commanderDocs = await Promise.all(commanders.map((id) => upsert(id, stubName(id), true)));
+const soldierDocs   = await Promise.all(soldiers.map(async (id) => {
+  const name = await stubName(id);
+  return upsert(id, name, false);
+}));
+
+const commanderDocs = await Promise.all(commanders.map(async (id) => {
+  const name = await stubName(id);
+  return upsert(id, name, true);
+}));
 
   const soldierPEMs   = toPemList(soldierDocs);
   const commanderPEMs = toPemList(commanderDocs);

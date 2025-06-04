@@ -34,7 +34,7 @@ const missionSchema = new Schema(
     Commanders:   [{ type: Schema.Types.ObjectId, ref: 'Commander' }],
 
     Configuration:{ type: Schema.Types.ObjectId, ref: 'Configuration', required: true },
-    Log:          { type: Schema.Types.ObjectId, ref: 'Log' },
+    Log:          { type: Schema.Types.ObjectId, ref: 'Log' , default: null  },
 
     IsFinished:   { type: Boolean, default: false },
   },

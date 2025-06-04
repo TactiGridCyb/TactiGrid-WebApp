@@ -1,22 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import styles       from '../styles/componentsDesign/missionItemsCard.module.css';
-import UploadLogButton from '../components/UploadLogButton.js';
 import { useRouter } from 'next/navigation';
+import styles       from '../styles/componentsDesign/missionItemsCard.module.css';
+import UploadLogButton from '../components/UploadLogButton';
 
 export default function MissionItem({ mission }) {
-  /* -------- normalised props -------- */
-
   const router = useRouter();
 
-
+  /* -------- normalised props -------- */
   const {
     id          = (mission._id ?? '').toString(),
     missionName = mission.missionName   ?? mission.missionsName ?? mission.name ?? '—',
     startTime   = mission.StartTime     ?? mission.startTime    ?? null,
-    duration    = mission.Duration      ?? mission.duration     ?? null, // seconds
+    duration    = mission.Duration      ?? mission.duration     ?? null,
     location    = mission.Location      ?? mission.location     ?? {},
+    isFinished  = mission.IsFinished    ?? mission.isFinished   ?? false,
   } = mission;
 
   /* -------- helpers -------- */
@@ -35,9 +34,9 @@ export default function MissionItem({ mission }) {
       onClick={() => setOpen(!open)}
       onKeyDown={(e) => e.key === 'Enter' && setOpen(!open)}
     >
-      {/* ---------------- header + brief details ---------------- */}
+      {/* -------- header & brief details -------- */}
       <div className={styles.headerRow}>
-        <span className={styles.icon}>⏳</span>
+        <span className={styles.icon}>{isFinished ? '✅' : '⏳'}</span>
         <div className={styles.titleContainer}>
           <h2 className={styles.title}>{missionName}</h2>
           <span className={styles.missionId}>#{shortId(id)}</span>
@@ -57,20 +56,39 @@ export default function MissionItem({ mission }) {
         </div>
       </div>
 
-      {/* ---------------- expanding drawer ---------------- */}
+      {/* -------- expanding drawer -------- */}
       <div className={styles.drawer}>
-        <div className={styles.actions}>
-          <UploadLogButton className={styles.actionBtn}/>
-          <button className={styles.actionBtn}
-          onClick={(e) => {
-          e.stopPropagation();
-          router.push(`/create-mission/${id}/provision`); 
-        }}
-          
-          >
-            Upload&nbsp;to&nbsp;watches
-          </button>
-        </div>
+        {isFinished ? (
+          /* one-button version */
+          <div className={styles.actions}>
+            <button
+              className={styles.actionBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/missions/${id}`);   // adjust the route if needed
+              }}
+            >
+              View&nbsp;video
+            </button>
+          </div>
+        ) : (
+          /* two-button version (unfinished) */
+          <div className={styles.actions}>
+            <UploadLogButton
+              missionId={id}
+              className={styles.actionBtn}
+            />
+            <button
+              className={styles.actionBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/create-mission/${id}/provision`);
+              }}
+            >
+              Upload&nbsp;to&nbsp;watches
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
