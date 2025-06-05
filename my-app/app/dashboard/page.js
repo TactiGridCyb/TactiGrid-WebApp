@@ -7,7 +7,7 @@ import RecentActivity from '../components/statistics/RecentActivity';
 export default function DashboardPage() {
   return (
     <div>
-      <Navbar />
+      <Navbar/>
 
       <header className={layout.header}>
         <h1>Dashboard</h1>

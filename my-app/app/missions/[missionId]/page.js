@@ -15,13 +15,15 @@ async function getMission(id) {
 }
 
 export default async function MissionPage({ params }) {
-  const paramsStore = await params;
-  const mission = await getMission(paramsStore.sessionId);
-  if (!mission) return <p>Mission not found or not yours.</p>;
+  const { missionId } = await params;              // ✅ plain value
+  console.log('missionId:', missionId);
+  const log = await getMission(missionId);
+
+  if (!log) return <p>Mission not found or not yours.</p>;
 
   return (
     <div style={{ height: '100vh' }}>
-      <ClientPlayer mission={mission} />   {/* renders only on the client */}
+      <ClientPlayer log={log} />   {/* renders only on the client */}
     </div>
   );
 }

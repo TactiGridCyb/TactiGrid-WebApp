@@ -1,0 +1,116 @@
+/* ─────────────────────────  CARD  ───────────────────────── */
+
+.missionCard {
+  position: relative;
+  padding: 1rem;
+  margin: 1rem auto;
+  max-width: 900px;
+  color: #000;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  font-family: futura, sans-serif;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  letter-spacing: 0.1cap;
+  transition: transform 0.25s ease;
+  overflow: hidden;            /* clip drawer while collapsed */
+  cursor: pointer;
+}
+
+.missionCard:hover {
+  transform: scale(1.02);
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #444;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.icon {
+  margin-right: 1rem;
+  font-size: 2rem;
+  text-shadow: 0 0 10px rgba(29, 108, 147, 0.5);
+}
+
+.titleContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font: 1.8rem/1 bebas, sans-serif;
+  margin: 0;
+}
+
+.missionId {
+  font-size: 1.1rem;
+  color: #777;
+}
+
+.detailsRow {
+  display: flex;
+  justify-content: space-between;
+  margin: 0.5rem 0;
+  gap: 0.5rem;
+}
+
+.detail {
+  flex: 1;
+  font-size: 1.1rem;
+}
+
+.detailLabel {
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+/* ────────────────────────  DRAWER  ──────────────────────── */
+
+.drawer {
+  max-height: 0;               /* collapsed state */
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  background: #f7f7f7;
+  border-top: 1px solid #ccc;
+  padding: 0 1rem;             /* X-padding is always present */
+}
+
+/* expand when .open class is present */
+.open .drawer {
+  max-height: 120px;           /* large enough for 2 buttons */
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* ───────────────────────  BUTTONS  ─────────────────────── */
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.actionBtn {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #0070f3;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.actionBtn:hover:not([disabled]) {
+  background: #005ad4;
+}
+
+.actionBtn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

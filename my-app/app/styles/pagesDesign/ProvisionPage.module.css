@@ -1,0 +1,14 @@
+/* ------------- entire /missions/[id]/provision page ------------- */
+
+.header {
+  text-align: center;
+  margin: 2rem 0 1rem;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.main {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
