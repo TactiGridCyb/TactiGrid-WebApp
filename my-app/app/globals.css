@@ -24,6 +24,45 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,.10);
 }
 
+@keyframes pulse {
+  0%   { r: 6;  opacity: 0.7; }
+  70%  { r: 16; opacity: 0;   }
+  100% { r: 6;  opacity: 0;   }
+}
+
+.leaflet-interactive.pulse-ring {
+  animation: pulse 2s infinite;
+  pointer-events: none;       /* ring itself is not clickable */
+  stroke: #95ffed;
+  fill: none;
+}
+
+@keyframes ripple {
+  0%   { r: 6;  stroke-width: 2; opacity: 0.8; }
+  60%  { r: 26; stroke-width: 1; opacity: 0.3; }
+  100% { r: 40; stroke-width: 0; opacity: 0;   }
+}
+
+/* TWO staggered ripples for a nicer effect */
+@keyframes ripple-2 {
+  0%   { r: 6;  stroke-width: 2; opacity: 0.8; }
+  60%  { r: 26; stroke-width: 1; opacity: 0.3; }
+  100% { r: 40; stroke-width: 0; opacity: 0;   }
+}
+
+.leaflet-interactive.ripple-ring {
+  animation: ripple 3s infinite;
+  pointer-events: none;
+  stroke: #3b82f6;   /* blue; change if you prefer */
+  fill: none;
+}
+
+.leaflet-interactive.ripple-ring.second {
+  animation: ripple-2 3s 1.5s infinite;   /* 1.5 s offset */
+  stroke: #3b82f6;
+  fill: none;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

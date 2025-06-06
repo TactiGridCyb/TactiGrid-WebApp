@@ -1,0 +1,240 @@
+/* CreateMissionDialog.css */
+
+/* === dialog shell === */
+.dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35); /* subtle overlay */
+}
+
+/* === giant square panel === */
+.dialog-panel {
+  width: 90vw;          /* much bigger than before */
+  height: 90vh;
+  max-width: none;
+  max-height: none;
+  background: #ffffff;
+  border-radius: 1rem;  /* still rounded but large */
+  padding: 2rem 3rem;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+/* === close‑(X) button === */
+.close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  border: none;
+  background: transparent;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+}
+.close-btn:hover {
+  color: #ef4444; /* red hover */
+}
+
+/* === form layout === */
+.field {
+  margin-bottom: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+label {
+  font-weight: 600;
+}
+.input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+}
+.error {
+  color: #d90429;
+  font-size: 0.85rem;
+}
+
+.address-row {
+  display: flex;
+  gap: 0.5rem;
+}
+.btn {
+  padding: 0.5rem 0.75rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+.btn:hover {
+  background: #1e50c5;
+}
+
+/* === map === */
+.map-wrapper {
+  height: 20rem; /* taller inside larger dialog */
+  border-radius: 0.75rem;
+  overflow: hidden;
+  margin-top: 0.75rem;
+}
+.map {
+  height: 100%;
+  width: 100%;
+}
+
+/* === options list === */
+.options {
+  max-height: 12rem;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  
+  border-radius: 0.5rem;
+}
+.option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  padding: .55rem .75rem;
+}
+.option:hover {
+  background: #f3f4f6;
+}
+
+/* === navigation arrows === */
+.nav {
+  position: absolute;
+  bottom: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: none;
+  background: #e2e8f0;
+  font-size: 1rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.nav:hover {
+  background: #cbd5e1;
+}
+.nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.nav-left {
+  left: 2rem;
+}
+.nav-right {
+  right: 2rem;
+}
+
+/* === dark‑mode tweaks === */
+@media (prefers-color-scheme: dark) {
+  .dialog-panel {
+    background: #1e293b;
+    color: #f1f5f9;
+  }
+  .input {
+    background: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
+  }
+  .btn {
+    background: #3b82f6;
+  }
+  .btn:hover {
+    background: #2563eb;
+  }
+  .options {
+    border-color: #475569;
+  }
+  .option:hover {
+    background: #334155;
+  }
+  .nav {
+    background: #334155;
+  }
+  .nav:hover {
+    background: #475569;
+  }
+}
+
+.idf { font-weight: 600; margin-right: .4rem; }
+
+/* ─── custom checkbox size ───────────────────────────── */
+.option input[type="checkbox"] {
+  /* remove the browser’s tiny default */
+  appearance: none;             /* Safari / Chrome */
+  -webkit-appearance: none;     /* older Safari */
+  -moz-appearance: none;        /* Firefox */
+
+  /* same square size as a capital letter (~1 em) */
+  width: 1.1em;
+  height: 1.1em;
+
+  /* styling */
+  border: 2px solid #6b7280;          /* gray-500 */
+  border-radius: .2em;
+  display: inline-grid;
+  place-content: center;
+  margin-right: .5rem;                /* space before text */
+  cursor: pointer;
+}
+
+.option input[type="checkbox"]::before {
+  content: "";
+  width: .55em;
+  height: .55em;
+  transform: scale(0);
+  background: #2563eb;                /* blue-600 */
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 20%, 80% 0, 43% 62%);
+  transition: transform 120ms ease-in-out;
+}
+
+.option input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+/* --- CSS-only map pin -------------------------------------------- */
+.css-pin {
+  /* the round head */
+ width: 24px;
+  height: 24px;
+  background: red;
+  border: 2px solid white;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  position: relative;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+  animation: pulse 3s infinite;
+}
+
+/* the pointed tail */
+.css-pin::after {
+  content: '';
+  width: 8px;
+  height: 13px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 6px;
+  left: 6px;    /* same red */
+}
