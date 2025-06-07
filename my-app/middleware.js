@@ -3,7 +3,6 @@
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// Pages that require login
 const protectedPagePaths = [
   '/',
   '/old-missions',
@@ -12,22 +11,17 @@ const protectedPagePaths = [
   '/config',
 ];
 
-// Pages that are public
 const publicPagePaths = ['/login'];
-
-// API routes under /api/auth/* are public (login/logout/me)
 const authApiPrefix = '/api/auth/';
 
 export const config = {
   matcher: [
-    // page routes
     '/',
     '/old-missions',
     '/create-mission',
     '/dashboard',
     '/config',
     '/login',
-    // all other API routes
     '/api/:path*',
   ],
 };
@@ -35,7 +29,7 @@ export const config = {
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  // 1) Allow static assets, public pages, and auth endpoints
+  // Allow static assets, public pages, and auth endpoints
   if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/favicon.ico') ||
@@ -45,19 +39,17 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  // 2) Decide if we need to protect this request
+  // Determine if the route is protected
   const isProtectedPage = protectedPagePaths.includes(pathname);
   const isApiRoute = pathname.startsWith('/api/');
 
   if (!isProtectedPage && !isApiRoute) {
-    // not a protected page or API → allow
     return NextResponse.next();
   }
 
-  // 3) Check for the authToken cookie
+  // Check for token
   const token = request.cookies.get('authToken')?.value;
   if (!token) {
-    // no token → block
     if (isApiRoute) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     } else {
@@ -65,12 +57,11 @@ export async function middleware(request) {
     }
   }
 
-  // 4) Verify the JWT
+  // Verify JWT
   try {
     await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET));
     return NextResponse.next();
   } catch {
-    // bad or expired token
     if (isApiRoute) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     } else {
