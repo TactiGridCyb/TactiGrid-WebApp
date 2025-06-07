@@ -1,0 +1,58 @@
+/* app/styles/pagesDesign/login.module.css */
+
+.loginContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #111 20%, #1f1f1f 80%);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.loginBox {
+  background-color: #202020;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
+  width: 320px;
+  text-align: center;
+  color: #f0f0f0;
+}
+
+.loginBox h2 {
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: #00ffff;
+}
+
+.inputField {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  background-color: #2a2a2a;
+  border: 1px solid #00ffff55;
+  border-radius: 6px;
+  color: white;
+  font-size: 16px;
+}
+
+.loginButton {
+  width: 100%;
+  padding: 12px;
+  background: #00ffff;
+  color: #101010;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.loginButton:hover {
+  background: #00cccc;
+}
+
+.error {
+  color: #ff4c4c;
+  margin-top: 10px;
+}
