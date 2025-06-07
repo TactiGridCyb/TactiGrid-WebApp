@@ -1,6 +1,6 @@
 'use client';
 import PropTypes from 'prop-types';
-import styles    from '../styles/componentsDesign/MissionItem.module.css';   // ← paste the CSS you sent into this file
+import styles    from '../styles/componentsDesign/MissionItemsCard.module.css';   // ← paste the CSS you sent into this file
 
 /**
  * One card in the mission list.
