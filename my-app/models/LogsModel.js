@@ -17,7 +17,7 @@ const dataRowSchema = new Schema(
 const eventSchema = new Schema(
   {
     name:      { type: String, required: true },
-    timestamp: { type: Date, required: true },
+    time_sent: { type: Date, required: true },
     data:      { type: Schema.Types.Mixed, default: {} },  // flexible JSON
   },
   { _id: false }

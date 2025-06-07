@@ -85,6 +85,7 @@ const commanderDocs = await Promise.all(commanders.map(async (id) => {
             gmk:            GMK,
             frequencies:    FREQS,
             soldiers:       soldierPEMs,
+            commanders:     commanderPEMs,
             intervalMs:     INTERVAL,
           }
         : {
