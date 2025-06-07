@@ -57,7 +57,7 @@ export async function middleware(request) {
     }
   }
 
-  // Verify JWT
+  
   try {
     await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET));
     return NextResponse.next();
