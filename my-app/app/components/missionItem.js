@@ -1,83 +1,95 @@
-// components/MissionItem.js
-"use client";
-import React from 'react';
-import Link from 'next/link';
-import styles from '../styles/componentsDesign/missionItemsCard.module.css';
+'use client';
 
-const MissionItem = ({ mission }) => {
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import styles       from '../styles/componentsDesign/missionItemsCard.module.css';
+import UploadLogButton from '../components/UploadLogButton';
+
+export default function MissionItem({ mission }) {
+  const router = useRouter();
+
+  /* -------- normalised props -------- */
   const {
-    sessionId,
-    name,
-    missionID,
-    startTime,
-    endTime,
-    duration,
-    logFiles,
-    gmk,
-    soldiersList,
-    location,
-    configID,
+    id          = (mission._id ?? '').toString(),
+    missionName = mission.missionName   ?? mission.missionsName ?? mission.name ?? '—',
+    startTime   = mission.StartTime     ?? mission.startTime    ?? null,
+    duration    = mission.Duration      ?? mission.duration     ?? null,
+    location    = mission.Location      ?? mission.location     ?? {},
+    isFinished  = mission.IsFinished    ?? mission.isFinished   ?? false,
   } = mission;
 
+  /* -------- helpers -------- */
+  const fmtDate = (d) => (d ? new Date(d).toLocaleString() : '—');
+  const fmtDur  = (s) => (s ? `${s}s` : '—');
+  const shortId = (str) => str.slice(-6);
+
+  /* -------- local state -------- */
+  const [open, setOpen] = useState(false);
+
   return (
-    
-    <div className={styles.missionCard}>
-      <Link href={`/missions/${sessionId}`} >
+    <div
+      className={`${styles.missionCard} ${open ? styles.open : ''}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => setOpen(!open)}
+      onKeyDown={(e) => e.key === 'Enter' && setOpen(!open)}
+    >
+      {/* -------- header & brief details -------- */}
       <div className={styles.headerRow}>
-        <div className={styles.icon}>
-          {/* Replace with your desired icon */}
-          <span role="img" aria-label="info">
-            ℹ️
-          </span>
-        </div>
+        <span className={styles.icon}>{isFinished ? '✅' : '⏳'}</span>
         <div className={styles.titleContainer}>
-          <h2 className={styles.title}>{name}</h2>
-          <span className={styles.missionId}>MissionID: {missionID}</span>
+          <h2 className={styles.title}>{missionName}</h2>
+          <span className={styles.missionId}>#{shortId(id)}</span>
         </div>
       </div>
 
       <div className={styles.detailsRow}>
         <div className={styles.detail}>
-          <span className={styles.detailLabel}>StartTime:</span> {startTime}
+          <span className={styles.detailLabel}>Start:</span> {fmtDate(startTime)}
         </div>
         <div className={styles.detail}>
-          <span className={styles.detailLabel}>EndTime:</span> {endTime}
+          <span className={styles.detailLabel}>Duration:</span> {fmtDur(duration)}
         </div>
         <div className={styles.detail}>
-          <span className={styles.detailLabel}>Duration:</span> {duration}
-        </div>
-        <div className={styles.detail}>
-          <span className={styles.detailLabel}>LogFiles:</span> {logFiles}
+          <span className={styles.detailLabel}>Location:</span>{' '}
+          {location.name ?? '—'}
         </div>
       </div>
 
-      <div className={styles.detailsRow}>
-        <div className={styles.detail}>
-          <span className={styles.detailLabel}>GMK:</span> {gmk}
-        </div>
-        <div className={styles.detail}>
-          <span className={styles.detailLabel}>Soldiers:</span> {soldiersList}
-        </div>
-        <div className={styles.detail}>
-          <span className={styles.detailLabel}>Location:</span> {location}
-        </div>
-        <div className={styles.detail}>
-          <span className={styles.detailLabel}>ConfigID:</span> {configID}
-        </div>
+      {/* -------- expanding drawer -------- */}
+      <div className={styles.drawer}>
+        {isFinished ? (
+          /* one-button version */
+          <div className={styles.actions}>
+            <button
+              className={styles.actionBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/missions/${id}`);   // adjust the route if needed
+              }}
+            >
+              View&nbsp;video
+            </button>
+          </div>
+        ) : (
+          /* two-button version (unfinished) */
+          <div className={styles.actions}>
+            <UploadLogButton
+              missionId={id}
+              className={styles.actionBtn}
+            />
+            <button
+              className={styles.actionBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(`/create-mission/${id}/provision`);
+              }}
+            >
+              Upload&nbsp;to&nbsp;watches
+            </button>
+          </div>
+        )}
       </div>
-
-      
-
-      {/* Overlay that appears on hover */}
-      <div className={styles.overlay}>Show Video</div>
-      
-
-      </Link>
-
     </div>
-    
-    
   );
-};
-
-export default MissionItem;
+}

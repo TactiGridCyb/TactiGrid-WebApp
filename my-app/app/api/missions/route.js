@@ -11,14 +11,11 @@ export async function GET() {
   try {
     await client.connect();
     const db = client.db(dbName);
-    
 
     const missions = await db
       .collection("missions")
-      .find({IsFinished: false }) // ✅ Proper filter
+      .find({ IsFinished: false }) // ✅ Proper filter for unfinished missions
       .toArray();
-
-    
 
     const cleaned = missions.map((m) => ({
       id: m._id.toString(),

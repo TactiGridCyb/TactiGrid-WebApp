@@ -72,3 +72,11 @@ export function fetchCommanders(term = '', signal) {
     : `/api/soldiers?role=Commander&all=1`;
   return hit(url, signal);
 }
+
+
+export function fetchConfigs(term = '', signal) {
+  const url = term
+    ? `/api/configs?search=${encodeURIComponent(term)}`
+    : `/api/configs`;                 // return first 20 if no search
+  return hit(url, signal);
+}
