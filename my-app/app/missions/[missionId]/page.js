@@ -20,7 +20,7 @@ export default async function MissionPage({ params }) {
   const log = await getMission(missionId);
 
   if (!log) return <p>Mission not found or not yours.</p>;
-
+  
   return (
     <div style={{ height: '100vh' }}>
       <ClientPlayer log={log} />   {/* renders only on the client */}
