@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import dbConnect         from '@/lib/mongoose';
 import Mission           from '@/models/MissionModel';
 import haversine         from 'haversine-distance';
+import '@/models/LogsModel'; 
 
 /* -------- helper: merge every spelling into one clean object -------- */
 function normaliseLog(raw = {}) {
