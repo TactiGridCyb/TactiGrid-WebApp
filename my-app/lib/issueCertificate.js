@@ -1,5 +1,6 @@
 import forge from 'node-forge';
 import { MongoClient } from 'mongodb';
+import crypto from 'crypto';
 
 const PASS = '12345';
 const uri  = process.env.MONGODB_URI;
@@ -31,8 +32,8 @@ export async function issueCertificate({ fullName, subjectId, isCommander }) {
   const csr = pki.createCertificationRequest();
   csr.publicKey = keys.publicKey;
   csr.setSubject([
-    { name: 'commonName', value: fullName },
-    { name: 'serialNumber', value: subjectId.toString() },
+    { name: 'commonName', value: `${fullName} ${Math.floor(Math.random() * 255) + 1}` },
+    
     { name: 'organizationalUnitName', value: isCommander ? 'Commander' : 'Soldier' },
   ]);
   csr.sign(keys.privateKey);
