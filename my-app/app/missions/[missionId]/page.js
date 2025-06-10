@@ -2,28 +2,33 @@
 import { cookies } from 'next/headers';
 import ClientPlayer from '../../components/ClientPlayer.js';
 
-async function getMission(id) {
-  const base   = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-  const cookieStore =await cookies();
+
+async function getMissionAndLog(id) {
+  const base = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const cookieStore = await cookies();
   const cookie = cookieStore.toString();
+
   const res = await fetch(`${base}/api/logs/${id}/positions`, {
     headers: { cookie },
-    cache: 'no-store'
+    cache: 'no-store',
   });
+
   if (!res.ok) return null;
-  return res.json();
+  return res.json();          // ⇒ { mission, log }
 }
 
 export default async function MissionPage({ params }) {
-  const { missionId } = await params;              // ✅ plain value
-  console.log('missionId:', missionId);
-  const log = await getMission(missionId);
+  const { missionId } = await params;          // URL segment
+  const bundle = await getMissionAndLog(missionId);
 
-  if (!log) return <p>Mission not found or not yours.</p>;
-  
+  if (!bundle) return <p>Mission not found or not yours.</p>;
+
+  const { mission, log } = bundle;
+
   return (
     <div style={{ height: '100vh' }}>
-      <ClientPlayer log={log} />   {/* renders only on the client */}
+      {/* Pass both pieces down; ClientPlayer forwards them to LogPlayer */}
+      <ClientPlayer log={log} mission={mission} />
     </div>
   );
 }

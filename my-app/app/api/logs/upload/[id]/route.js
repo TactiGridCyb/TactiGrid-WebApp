@@ -87,9 +87,9 @@ export async function POST(req, { params }) {
 
     // 2b signature chain
 
-    // if (!caCert.verify(commander)) {
-    //   return NextResponse.json({ error: 'invalid-certificate' }, { status: 401 });
-    // }
+    if (!caCert.verify(commander)) {
+      return NextResponse.json({ error: 'invalid-certificate' }, { status: 401 });
+    }
   } catch (err) {
     console.error('CERT-VERIFY-FAIL', err);
     return NextResponse.json({ error: 'certificate-parse-fail'  }, { status: 400 });
