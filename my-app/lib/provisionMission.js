@@ -97,7 +97,7 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
       const basePayload = {
         certificate  : doc.certPem + doc.keyPem,
         caCertificate: caCertPem,
-        mission: missionId,
+        Mission: missionId,
         gmk          : GMK,
         frequencies  : FREQS,
         intervalMs   : INTERVAL,
