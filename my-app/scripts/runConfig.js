@@ -28,9 +28,16 @@ function compileAndRun(source, params, fnName) {
   sandbox.globalThis = sandbox;
 
   const fn = new vm.Script(wrapped).runInContext(vm.createContext(sandbox));
-  if (typeof fn !== 'function') {
+  if (typeof fn !== 'function') 
+  {
     throw new Error(`"${fnName}" did not evaluate to a function`);
   }
+
+  if(!params)
+  {
+    return fn();
+  }
+  
   return fn(...Object.values(params));
 }
 
