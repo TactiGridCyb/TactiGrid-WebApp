@@ -23,6 +23,8 @@ export default function UploadMission() {
     try {
       const res = await fetch("/api/missions");
       const data = await res.json();
+      
+
       setMissions(data.missions || []);
       setShowModal(true);
     } catch (err) {

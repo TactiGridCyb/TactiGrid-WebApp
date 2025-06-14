@@ -16,9 +16,10 @@ export default function Navbar() {
   }, []);
 
   const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    setUser(null);
-  };
+  await fetch('/api/auth/logout', { method: 'POST' });
+  setUser(null);
+  window.location.href = '/login'; // 🔁 Redirect immediately to login
+};
 
   return (
     <nav className={styles.navbar}>
