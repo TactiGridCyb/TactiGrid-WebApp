@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles       from '../styles/componentsDesign/missionItemsCard.module.css';
 import UploadLogButton from '../components/UploadLogButton';
+import ReportButton from '../components/ReportButton';
 
 export default function MissionItem({ mission }) {
   const router = useRouter();
@@ -70,6 +71,10 @@ export default function MissionItem({ mission }) {
             >
               View&nbsp;video
             </button>
+            <ReportButton
+              missionId={id}
+              className={styles.actionBtn}
+      />
           </div>
         ) : (
           /* two-button version (unfinished) */

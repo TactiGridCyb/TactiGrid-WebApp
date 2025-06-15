@@ -16,9 +16,17 @@ const dataRowSchema = new Schema(
 /* ──────── event row ──────── */
 const eventSchema = new Schema(
   {
-    name:      { type: String, required: true },
-    time_sent: { type: Date, required: true },
-    data:      { type: Schema.Types.Mixed, default: {} },  // flexible JSON
+    eventName: {                           // <-- renamed “name” → “eventName”
+      type: String,
+      required: true,
+      enum: ['commanderSwitch', 'missingSoldier', 'compromisedSoldier'],
+    },
+    timestamp: { type: Date, required: true }, // <-- renamed “time_sent”
+
+    /* one of the following three will be present, depending on eventName */
+    newCommanderID: { type: String, trim: true },
+    missingID:      { type: String, trim: true },
+    compromisedID:  { type: String, trim: true },
   },
   { _id: false }
 );

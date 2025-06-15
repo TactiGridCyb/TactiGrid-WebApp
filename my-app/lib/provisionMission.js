@@ -1,33 +1,54 @@
 // lib/provisionMission.js
-import forge            from 'node-forge';
-import tls              from 'tls';
-import mongoose         from 'mongoose';
-import Certificate      from '@/models/Certificate';
+/* eslint-disable no-console */
+import forge                from 'node-forge';
+import tls                  from 'tls';
+import mongoose             from 'mongoose';
+
+import Certificate          from '@/models/Certificate';
+import Soldier              from '@/models/Soldier';
 import { issueCertificate } from '@/lib/issueCertificate';
-import Soldier from '@/models/Soldier';
 
-/* ---------- tweakables ---------- */
-const GMK      = 'A'.repeat(32);
-const FREQS    = [433.5, 433.6, 433.7, 433.8];
-const INTERVAL = 2000;          // ms
-const PASS     = '12345';       // decrypt CA private key
-const PORT     = 8743;          // TLS port
+import { runMissionConfiguration } from '@/scripts/runConfig.js';  // <-- fixed
 
-/* util */
+/* ── tweakables filled after we inspect the mission ── */
+let GMK;                         // 32-char hex
+let FREQS;                       // whatever FHF returns
+let INTERVAL = 2000;             // ms  (default, overwritten later)
+
+const PASS = '12345';            // decrypt CA private key
+const PORT = 8743;               // TLS port
+
+/* util helpers */
 const toPemList = (docs) => docs.map((d) => d.certPem);
+
 const stubName = async (id) => {
   const soldier = await Soldier.findById(id).lean();
-  console.log(soldier);
-  return soldier?.fullName.toString() || `P#${id.toString().slice(-4)}`;
+  return soldier?.fullName?.toString() || `P#${id.toString().slice(-4)}`;
 };
 
 /* ------------------------------------------------------------------ *
  *  startMissionProvision({ missionId, soldiers, commanders })        *
  * ------------------------------------------------------------------ */
 export async function startMissionProvision({ missionId, soldiers, commanders }) {
+  /* 0️⃣  pull GMK / FHF / interval from the linked Configuration */
+  try {
+    const cfgOut = await runMissionConfiguration(missionId);
+    GMK      = cfgOut.gmk;
+    FREQS    = cfgOut.fhf;
+    INTERVAL = cfgOut.interval;
+
+    console.log('✅ GMK (32-hex):', GMK);
+    console.log('✅ FHF:', FREQS);
+    console.log('⏱️  interval:', INTERVAL, 'ms');
+  } catch (err) {
+    console.error('❌ runMissionConfiguration failed:', err.message);
+    throw err;
+  }
+
+  /* 1️⃣  connect to Mongo once for the rest of the work */
   await mongoose.connect(process.env.MONGODB_URI);
 
-  /* 1 ── Root-CA from DB */
+  /* 2️⃣  pull Root-CA from DB */
   const caDoc = await mongoose.connection.db
     .collection('CA')
     .findOne({ _id: 'root-ca' });
@@ -39,86 +60,76 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
     pki.decryptRsaPrivateKey(caDoc.privateKey, PASS)
   );
 
-  /* 2 ── issue / upsert certs */
+  /* 3️⃣  ensure certificates for every subject in the queue */
   async function upsert(id, fullName, isCommander) {
     let doc = await Certificate.findOne({ subjectId: id, missionId });
     if (doc) return doc;
-    fullName = fullName + " " +id;
+
     const signed = await issueCertificate({ fullName, subjectId: id, isCommander });
     doc = await Certificate.create({ subjectId: id, fullName, isCommander, missionId, ...signed });
     return doc;
   }
 
-const soldierDocs   = await Promise.all(soldiers.map(async (id) => {
-  const name = await stubName(id);
-  return upsert(id, name, false);
-}));
-
-const commanderDocs = await Promise.all(commanders.map(async (id) => {
-  const name = await stubName(id);
-  return upsert(id, name, true);
-}));
+  const soldierDocs = await Promise.all(
+    soldiers.map(async (id) => upsert(id, await stubName(id), false))
+  );
+  const commanderDocs = await Promise.all(
+    commanders.map(async (id) => upsert(id, await stubName(id), true))
+  );
 
   const soldierPEMs   = toPemList(soldierDocs);
   const commanderPEMs = toPemList(commanderDocs);
 
-  /* 3 ── queue: commanders first, then soldiers */
-  const queueIds = [...commanders, ...soldiers];        // ordered ObjectIds
+  /* 4️⃣  prepare the ordered queue (commanders first) */
+  const queueIds = [...commanders, ...soldiers];
   let index = 0;
 
-  /* 4 ── spin up TLS server (no client cert required) */
+  /* 5️⃣  spin up TLS server */
   const server = tls.createServer(
     { key: caKeyPem, cert: caCertPem },
     async (socket) => {
-      if (index >= queueIds.length) return socket.destroy();   // extra connections ignored
+      if (index >= queueIds.length) return socket.destroy(); // ignore extras
 
-      /* pick the next person in queue */
       const subjectId = queueIds[index++];
       const doc = await Certificate.findOne({ subjectId, missionId });
       if (!doc) { socket.destroy(); return; }
 
-      /* payload differs by role */
+      const basePayload = {
+        certificate  : doc.certPem + doc.keyPem,
+        caCertificate: caCertPem,
+        Mission: missionId,
+        gmk          : GMK,
+        frequencies  : FREQS,
+        intervalMs   : INTERVAL,
+      };
+
+      /* commanders get the soldiers too */
       const payload = doc.isCommander
-        ? {
-            certificate:  doc.certPem + doc.keyPem,
-            caCertificate: caCertPem,
-            gmk:            GMK,
-            frequencies:    FREQS,
-            soldiers:       soldierPEMs,
-            commanders:     commanderPEMs,
-            intervalMs:     INTERVAL,
-          }
-        : {
-            certificate:  doc.certPem + doc.keyPem,
-            caCertificate: caCertPem,
-            gmk:            GMK,
-            frequencies:    FREQS,
-            commanders:     commanderPEMs,
-            intervalMs:     INTERVAL,
-          };
+        ? { ...basePayload, soldiers: soldierPEMs, commanders: commanderPEMs }
+        : { ...basePayload, commanders: commanderPEMs };
 
       socket.write(JSON.stringify(payload));
       socket.end();
 
-
+      /* ping backend so UI knows this subject is done */
       const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-      await fetch(BASE + '/api/provision/ping', {
-        method: 'POST',
+      await fetch(`${BASE}/api/provision/ping`, {
+        method : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ missionId, subjectId }),
+        body   : JSON.stringify({ missionId, subjectId }),
       });
 
-      console.log(`✓ Sent bundle to ${doc.fullName}`);
+      console.log(`✓ bundle sent to ${doc.fullName}`);
 
-      /* auto-shutdown after last device */
+      /* once last device served → close TLS */
       if (index === queueIds.length) {
-        console.log('All devices provisioned — closing TLS server');
+        console.log('All devices provisioned — shutting TLS server');
         server.close();
       }
     }
   );
 
-  /* let the API respond immediately; server keeps running in background */
+  /* let caller continue immediately; resolve when server is listening */
   return new Promise((resolve) =>
     server.listen(PORT, () => {
       console.log(`TLS provision server listening on :${PORT}`);
