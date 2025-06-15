@@ -3,7 +3,6 @@
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// Pages that require login
 const protectedPagePaths = [
   '/',
   '/old-missions',
