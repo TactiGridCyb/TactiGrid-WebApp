@@ -1,23 +1,20 @@
-// app/old-missions/page.jsx  (Server Component – no "use client")
+// app/old-missions/page.jsx
 import { cookies } from 'next/headers';
-import Navbar from '../components/Navbar.js';
-import MissionItem from '../components/missionItem.js';
-
+import Navbar from '../components/Navbar.jsx';
+import MissionItem from '../components/missionItem.jsx';
 import styles from '../styles/pagesDesign/OldMissions.module.css';
 
-
-
-/* -------- map raw Mongo docs → a clean, predictable shape -------- */
+/* -------- normalise docs -------- */
 const shape = (doc) => ({
-  id:          (doc._id ?? doc.id).toString(),          // always string
-  missionName: doc.missionName  ?? doc.name  ?? '—',
-  startTime:   doc.StartTime    ?? doc.startTime ?? null,
-  duration:    doc.Duration     ?? doc.duration  ?? null, // seconds
-  location:    doc.Location     ?? doc.location  ?? {},
-  isFinished:  doc.IsFinished   ?? doc.isFinished ?? false,
+  id:          (doc._id ?? doc.id).toString(),
+  missionName: doc.missionName ?? doc.name ?? '—',
+  startTime:   doc.StartTime   ?? doc.startTime ?? null,
+  duration:    doc.Duration    ?? doc.duration  ?? null,
+  location:    doc.Location    ?? doc.location  ?? {},
+  isFinished:  doc.IsFinished  ?? doc.isFinished ?? false,
 });
 
-/* -------- fetch only missions in progress -------- */
+/* -------- fetch finished missions -------- */
 async function getFinishedMissions() {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();
@@ -29,36 +26,43 @@ async function getFinishedMissions() {
   });
 
   if (!res.ok) return [];
-  const { missions } = await res.json();         // { missions:[…] }
-
+  const { missions } = await res.json();
   return missions.map(shape);
 }
 
-export default async function MissionsInProgressPage() {
+export default async function FinishedMissionsPage() {
   const missions = await getFinishedMissions();
 
   return (
-    <div>
+    <div className={styles.page}>
       <Navbar />
 
       <header className={styles.header}>
-        <h1>Missions — Finished</h1>
+        <div className={styles.headerInner}>
+          <h1 className={styles.title}>Missions — Finished</h1>
+          <p className={styles.subtitle}>
+            Review and manage completed missions. Click a card to expand actions.
+          </p>
+          <span className={styles.countBadge}>{missions.length}</span>
+        </div>
       </header>
 
       <main className={styles.main}>
-        <div className={styles.missionsContainer}>
-          {missions.length === 0 && (
-            <p style={{ textAlign: 'center', color: '#666' }}>
-              No missions currently running.
-            </p>
+        <section className={styles.panel}>
+          {missions.length === 0 ? (
+            <div className={styles.empty}>
+              <div className={styles.emptyIcon}>🗂️</div>
+              <h3>No finished missions yet</h3>
+              <p>Once missions complete, they’ll appear here with quick actions.</p>
+            </div>
+          ) : (
+            <div className={styles.missionsGrid}>
+              {missions.map((m) => (
+                <MissionItem key={m.id} mission={m} />
+              ))}
+            </div>
           )}
-
-          {missions.map((m) => (
-            <MissionItem key={m.id} mission={m} />
-          ))}
-        </div>
-
-        
+        </section>
       </main>
     </div>
   );
