@@ -1,20 +1,30 @@
+// app/api/provision/start/route.js
+export const runtime = 'nodejs';
+
 import { NextResponse } from 'next/server';
 import { startMissionProvision } from '@/lib/provisionMission';
 
 export async function POST(req) {
   try {
-    const { missionId, soldiers, commanders } = await req.json();
+    const body = await req.json();
+    const {
+      missionId,
+      soldiers = [],
+      commanders = [],
+      host,
+      port,
+      force = true,
+    } = body;
+
     if (!missionId || !Array.isArray(soldiers) || !Array.isArray(commanders)) {
       return NextResponse.json({ error: 'Bad payload' }, { status: 400 });
     }
 
-    /* fire-and-forget: start server, respond 202 immediately */
-    startMissionProvision({ missionId, soldiers, commanders })
-      .catch((err) => console.error('Provision error:', err));
-
-    return NextResponse.json({ ok: true }, { status: 202 });
+    const out = await startMissionProvision({ missionId, soldiers, commanders, host, port, force });
+    return NextResponse.json(out, { status: 200 });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: 'Internal' }, { status: 500 });
+    const msg = String(err?.message || 'Internal');
+    const status = msg.startsWith('EADDRINUSE') ? 409 : 500;
+    return NextResponse.json({ error: msg }, { status });
   }
 }

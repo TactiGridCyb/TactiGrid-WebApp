@@ -1,17 +1,16 @@
-// app/api/provision/ping/route.js
+// app/api/provision/resend/route.js
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { emit } from '@/lib/sseBus';
+import { resendForSubject } from '@/lib/provisionMission';
 
 export async function POST(req) {
   try {
     const { missionId, subjectId } = await req.json();
     if (!missionId || !subjectId)
       return NextResponse.json({ error: 'missionId and subjectId required' }, { status: 400 });
-
-    emit(missionId, { subjectId: String(subjectId) });
-    return NextResponse.json({ ok: true }, { status: 200 });
+    const out = resendForSubject(missionId, subjectId);
+    return NextResponse.json(out, { status: 200 });
   } catch (e) {
     return NextResponse.json({ error: e.message || 'Internal' }, { status: 500 });
   }

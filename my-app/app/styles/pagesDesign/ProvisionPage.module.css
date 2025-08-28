@@ -1,14 +1,50 @@
-/* ------------- entire /missions/[id]/provision page ------------- */
-
-.header {
-  text-align: center;
-  margin: 2rem 0 1rem;
-  font-size: 2rem;
-  font-weight: 600;
+.page {
+  min-height: 100vh;
+  background: radial-gradient(1200px 800px at 20% -10%, rgba(118,96,255,0.18), transparent 40%),
+              radial-gradient(1000px 700px at 100% 0%, rgba(255,96,188,0.12), transparent 45%),
+              linear-gradient(180deg, #0f1220 0%, #0a0d16 100%);
+  color: #e8eaf6;
 }
 
-.main {
-  display: flex;
-  justify-content: center;
-  padding: 1rem;
+.header { padding: 28px 24px 8px; }
+.header h1 { font-weight: 700; font-size: 1.6rem; margin: 0 0 6px 0; }
+.sub { opacity: .7; margin: 0; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 18px;
+  padding: 18px 24px 32px;
 }
+@media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+}
+
+.cardTitle { font-size: 1.1rem; margin: 0 0 12px 0; font-weight: 700; }
+
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 10px 16px;
+  align-items: center;
+}
+.kv > div { display: contents; }
+.kv dt { opacity: .7; font-weight: 500; }
+.kv dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.hint { margin-top: 14px; font-size: .9rem; opacity: .8; }
+.hint code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 6px; }

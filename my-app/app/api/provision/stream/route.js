@@ -1,24 +1,37 @@
-import { NextResponse } from 'next/server';
+// app/api/provision/stream/route.js
+export const runtime = 'nodejs';
+
+import { subscribe, unsubscribe } from '@/lib/sseBus';
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const missionId = searchParams.get('missionId');
-  if (!missionId) return new Response('Bad', { status: 400 });
+  if (!missionId) return new Response('missionId required', { status: 400 });
 
-  const encoder = new TextEncoder();
+  let controller;
+
   const stream = new ReadableStream({
-    start(controller) {
-      /* stash controller by missionId so /ping can write to it */
-      globalThis.__provisionStreams ??= new Map();
-      globalThis.__provisionStreams.set(missionId, controller);
+    start(c) {
+      controller = c;
+      c.enqueue(`: connected\n\n`);
+      subscribe(missionId, c);
+      const t = setInterval(() => {
+        try { c.enqueue(`: ping\n\n`); } catch {}
+      }, 25_000);
+      controller.__hb = t;
     },
     cancel() {
-      globalThis.__provisionStreams.delete(missionId);
-    },
+      try { clearInterval(controller?.__hb); } catch {}
+      unsubscribe(missionId, controller);
+    }
   });
 
-  return new NextResponse(stream, {
-    status: 200,
-    headers: { 'Content-Type': 'text/event-stream' },
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'Transfer-Encoding': 'chunked'
+    }
   });
 }

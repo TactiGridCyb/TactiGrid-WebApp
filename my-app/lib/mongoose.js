@@ -1,37 +1,39 @@
 // lib/mongoose.js
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
+const { MONGODB_URI } = process.env;
 if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable in .env');
+  throw new Error('Please define MONGODB_URI in your environment');
+}
+
+// Cache across hot reloads
+let cached = globalThis.__mongoose_cached;
+if (!cached) {
+  cached = globalThis.__mongoose_cached = { conn: null, promise: null };
 }
 
 /**
- * In development, we use a global variable so that we can reuse the same
- * Mongoose connection across hot reloads. Otherwise, we create a new connection.
+ * Connect once and reuse. Do NOT close here.
  */
-let cached = global.mongoose;
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}``
+export default async function dbConnect() {
+  // reuse if connected
+  if (cached.conn && mongoose.connection.readyState === 1) return cached.conn;
 
-async function dbConnect() {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
+  // start a single connection promise
   if (!cached.promise) {
-    const opts = {
+    cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
-    };
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      console.log('Mongoose connected!');
-      return mongoose;
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 10_000,
+    }).then(m => {
+      console.log('[mongoose] connected');
+      return m;
+    }).catch(err => {
+      cached.promise = null;
+      throw err;
     });
   }
+
   cached.conn = await cached.promise;
   return cached.conn;
 }
-
-export default dbConnect;
