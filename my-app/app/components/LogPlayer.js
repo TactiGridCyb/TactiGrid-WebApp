@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import Soldier   from '@/models/Soldier';
 
 /* ------------------------------------------------------------------
   Helpers
@@ -33,6 +34,8 @@ export default function LogPlayer({ log, mission }) {
 
   /* ------------------- unpack --------------------*/
   const { Interval: intervalMs = 1000, Data = [], Events = [] } = log;
+  const [cccMander, setcccMander] = useState({});
+  
 
   /* ---------------- display‑name lookup ----------*/
   const displayName = useMemo(() => {
@@ -46,10 +49,12 @@ export default function LogPlayer({ log, mission }) {
   }, [mission]);
 
   /* ---------------- timeline calc ----------------*/
-  const sortedData = [...Data].sort((a, b) => toMs(a.time_sent) - toMs(b.time_sent));
+  const sortedData = [...Data .sort((a, b) => toMs(a.time_sent) - toMs(b.time_sent));
   const startMs = sortedData.length ? toMs(sortedData[0].time_sent) : 0;
   const endMs = sortedData.length ? toMs(sortedData[sortedData.length - 1].time_sent) : 0;
   const durationMs = Math.max(endMs - startMs, 0);
+
+  
 
   /* ---------------- UI state ---------------------*/
   const [t, setT] = useState(0);
@@ -75,6 +80,9 @@ export default function LogPlayer({ log, mission }) {
     layerRef.current.addTo(mapRef.current);
   }, [sortedData]);
 
+
+
+
   /* ------------------------------------------------------------------
     Event state – who is commander / missing / compromised at time nowMs
   -------------------------------------------------------------------*/
@@ -86,6 +94,11 @@ export default function LogPlayer({ log, mission }) {
 
       // first commander = first ObjectId in mission.commanders
       let commander = mission?.commanders?.length ? slug(mission.commanders[0]) : null;
+      // after you have mission
+
+
+
+
 
       for (const e of Events) {
         const ts = toMs(e.timestamp);

@@ -1,21 +1,6 @@
 import React from 'react';
 
-/**
- * This component renders a notification card that looks
- * exactly like the screenshot you provided:
- *
- *  ------------------------------------------------------
- * | [Bell Icon]  Financial Report Over...     [ ... ]    |
- * | Notification • 2m                                   |
- * | Alex Miller                                         |
- * | High Priority (in red)                              |
- * |                                                      |
- * | Please submit your quarterly figures by the end of   |
- * | the business day today, as they are overdue.         |
- * |                                                      |
- * | [ Dismiss ]                         [ Submit ]       |
- *  ------------------------------------------------------
- */
+
 export default function NotificationCard() {
   return (
     <div style={styles.cardContainer}>

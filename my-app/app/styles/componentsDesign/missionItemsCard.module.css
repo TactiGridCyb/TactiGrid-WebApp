@@ -1,116 +1,201 @@
 /* ─────────────────────────  CARD  ───────────────────────── */
-
 .missionCard {
   position: relative;
-  padding: 1rem;
-  margin: 1rem auto;
-  max-width: 900px;
-  color: #000;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fff;
-  font-family: futura, sans-serif;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.1cap;
-  transition: transform 0.25s ease;
-  overflow: hidden;            /* clip drawer while collapsed */
+  padding: 16px 16px 10px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.22); /* glass border refined */
+  box-shadow:
+    0 12px 36px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.35),
+    inset 0 -1px 0 rgba(0,0,0,0.18);
+  color: inherit;
   cursor: pointer;
+  overflow: hidden; /* clip sheen + drawer */
+  transform-origin: center;
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
 }
-
 .missionCard:hover {
-  transform: scale(1.02);
+  transform: translateY(-2px);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.45),
+    inset 0 -1px 0 rgba(0,0,0,0.22);
+  border-color: rgba(255,255,255,0.30);
 }
 
+/* glossy swipe sheen */
+.sheen {
+  position: absolute;
+  inset: 0 -40%;
+  pointer-events: none;
+  background: linear-gradient(115deg,
+    transparent 0%,
+    rgba(255,255,255,0.25) 30%,
+    rgba(255,255,255,0.08) 42%,
+    transparent 60%);
+  transform: translateX(-60%);
+  transition: transform .6s ease;
+}
+.missionCard:hover .sheen { transform: translateX(0%); }
+
+/* ───────────────────────  HEADER  ─────────────────────── */
 .headerRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  border-bottom: 1px solid #444;
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.18);
+}
+:global(.dark) .headerRow {
+  border-bottom-color: rgba(255,255,255,0.12);
 }
 
 .icon {
-  margin-right: 1rem;
-  font-size: 2rem;
-  text-shadow: 0 0 10px rgba(29, 108, 147, 0.5);
+  font-size: 1.6rem;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,0.25));
 }
 
 .titleContainer {
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
 .title {
-  font: 1.8rem/1 bebas, sans-serif;
   margin: 0;
+  font-size: clamp(1.1rem, 1.2rem + .3vw, 1.4rem);
+  line-height: 1.1;
+  font-family: bebas, system-ui, sans-serif;
+  letter-spacing: .3px;
 }
 
 .missionId {
-  font-size: 1.1rem;
-  color: #777;
+  margin-top: 2px;
+  font-size: .9rem;
+  opacity: .75;
 }
 
-.detailsRow {
+.headerRight {
   display: flex;
-  justify-content: space-between;
-  margin: 0.5rem 0;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 10px;
+}
+
+/* little arrow that rotates when open */
+.caret::before {
+  content: "▸";
+  display: inline-block;
+  transform: translateY(1px);
+  transition: transform .25s ease;
+  opacity: .8;
+}
+.open .caret::before { transform: rotate(90deg); }
+
+/* status chip */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .2px;
+  border: 1px solid rgba(255,255,255,.25);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.chipLive {
+  color: #0b6b2f;
+  background: rgba(34,197,94,.20);
+  border-color: rgba(34,197,94,.35);
+}
+.chipFinished {
+  color: #155e75;
+  background: rgba(59,130,246,.20);
+  border-color: rgba(59,130,246,.35);
+}
+
+/* ───────────────────────  DETAILS  ─────────────────────── */
+.detailsRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 8px 0 4px 0;
 }
 
 .detail {
-  flex: 1;
-  font-size: 1.1rem;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
 }
 
 .detailLabel {
-  font-weight: 600;
-  margin-right: 0.25rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .2px;
+  background: rgba(255,255,255,0.20);
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  white-space: nowrap;
 }
 
-/* ────────────────────────  DRAWER  ──────────────────────── */
-
-.drawer {
-  max-height: 0;               /* collapsed state */
+.detailValue {
   overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
-  background: #f7f7f7;
-  border-top: 1px solid #ccc;
-  padding: 0 1rem;             /* X-padding is always present */
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: .95;
 }
 
-/* expand when .open class is present */
+/* ───────────────────────  DRAWER  ─────────────────────── */
+.drawer {
+  max-height: 0; /* collapsed */
+  overflow: hidden;
+  padding: 0 8px;
+  margin-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.14);
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: max-height .28s ease, padding .28s ease, margin .28s ease, border-color .28s ease;
+}
 .open .drawer {
-  max-height: 120px;           /* large enough for 2 buttons */
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+  max-height: 160px; /* ample for two buttons */
+  padding-top: 12px;
+  padding-bottom: 12px;
+  margin-top: 10px;
+  border-top-color: rgba(255,255,255,0.22);
 }
 
 /* ───────────────────────  BUTTONS  ─────────────────────── */
-
 .actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 10px;
+  align-items: center;
+  justify-items: stretch;
+}
+@media (max-width: 520px) {
+  .actions { grid-template-columns: 1fr; }
 }
 
+/* using global .btn / .btn-primary look, but allow width control */
 .actionBtn {
-  flex: 1;
-  min-width: 120px;
-  padding: 0.6rem 1rem;
-  border: none;
-  border-radius: 6px;
-  background: #0070f3;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease;
+  width: 100%;
+  /* extra polish on module side */
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.15);
 }
+.actionBtn:active { transform: translateY(0); }
 
-.actionBtn:hover:not([disabled]) {
-  background: #005ad4;
-}
-
-.actionBtn[disabled] {
-  opacity: 0.55;
-  cursor: not-allowed;
+/* Small screens fine-tune */
+@media (max-width: 720px) {
+  .detailsRow { grid-template-columns: 1fr; }
 }

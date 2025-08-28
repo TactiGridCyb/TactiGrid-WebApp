@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import dbConnect   from '@/lib/mongoose';
 import Mission     from '@/models/MissionModel';
 import Log         from '@/models/LogsModel';
+import Soldier     from '@/models/Soldier';
 import { requireUser } from '@/lib/whoisme';
 
 /**
@@ -38,6 +39,8 @@ export async function GET(_req, { params }) {
   if (!log)
     return NextResponse.json({ error: 'log-not-found' }, { status: 404 });
 
+
+  
   /* --- success --- */
   return NextResponse.json({ mission, log });
 }

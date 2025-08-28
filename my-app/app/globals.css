@@ -1,11 +1,22 @@
 @import "tailwindcss";
 
-
-
-
+/* =========================
+   Global Design Tokens
+   ========================= */
 :root {
-  --background: #c2d0e9;
-  --foreground: #171717;
+  /* HSL tokens used by glass + theme */
+  --brand: 262 85% 60%;
+  --brand-foreground: 0 0% 100%;
+  --ring: 262 85% 60%;
+  --text: 222 30% 12%;
+  --muted: 220 15% 45%;
+  --bg: 220 20% 97%;
+
+  /* Derived (legacy vars mapped to HSL tokens) */
+  --background: hsl(var(--bg));
+  --foreground: hsl(var(--text));
+
+  /* Palette you already use */
   --blue-500:   #3b82f6;
   --pink-500:   #ec4899;
   --green-500:  #22c55e;
@@ -24,97 +35,32 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,.10);
 }
 
-@keyframes pulse {
-  0%   { r: 6;  opacity: 0.7; }
-  70%  { r: 16; opacity: 0;   }
-  100% { r: 6;  opacity: 0;   }
+.dark {
+  --brand: 262 85% 65%;
+  --brand-foreground: 0 0% 100%;
+  --ring: 262 85% 70%;
+  --text: 220 15% 92%;
+  --muted: 220 10% 65%;
+  --bg: 222 21% 8%;
+
+  /* derived */
+  --background: hsl(var(--bg));
+  --foreground: hsl(var(--text));
 }
 
-.leaflet-interactive.pulse-ring {
-  animation: pulse 2s infinite;
-  pointer-events: none;       /* ring itself is not clickable */
-  stroke: #95ffed;
-  fill: none;
-}
-
-@keyframes ripple {
-  0%   { r: 6;  stroke-width: 2; opacity: 0.8; }
-  60%  { r: 26; stroke-width: 1; opacity: 0.3; }
-  100% { r: 40; stroke-width: 0; opacity: 0;   }
-}
-
-/* TWO staggered ripples for a nicer effect */
-@keyframes ripple-2 {
-  0%   { r: 6;  stroke-width: 2; opacity: 0.8; }
-  60%  { r: 26; stroke-width: 1; opacity: 0.3; }
-  100% { r: 40; stroke-width: 0; opacity: 0;   }
-}
-
-.leaflet-interactive.ripple-ring {
-  animation: ripple 3s infinite;
-  pointer-events: none;
-  stroke: #3b82f6;   /* blue; change if you prefer */
-  fill: none;
-}
-
-.leaflet-interactive.ripple-ring.second {
-  animation: ripple-2 3s 1.5s infinite;   /* 1.5 s offset */
-  stroke: #3b82f6;
-  fill: none;
-}
-
-
-.pulse-commander-1,
-.pulse-commander-2 {
-  border: 0;
-  background: rgba(168, 85, 247, 0.25); /* purple‑ish */
-  animation: commander-ripple 2.4s infinite ease-out;
-}
-.pulse-commander-2 {
-  animation-delay: 1.2s;
-}
-
-@keyframes ripple {
-  0% {
-    transform: scale(0.1);
-    opacity: 0.7;
-  }
-  80% {
-    transform: scale(3);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(3);
-    opacity: 0;
+/* Optional: auto system dark (uncomment if desired)
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: 220 15% 92%;
+    --muted: 220 10% 65%;
+    --bg: 222 21% 8%;
+    --background: hsl(var(--bg));
+    --foreground: hsl(var(--text));
   }
 }
+*/
 
-@keyframes commander-ripple {
-  0% {
-    transform: scale(0.1);
-    opacity: 0.7;
-  }
-  80% {
-    transform: scale(3);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(3);
-    opacity: 0;
-  }
-}
-
-.event-marker {
-  font-size: 1.3rem;
-  line-height: 1;
-  text-shadow: 0 0 2px #000;
-}
-.missing-marker {
-  color: #ef4444;
-  font-size: 1.25rem;
-  text-shadow: 0 0 2px #000;
-}
-
+/* Tailwind v4 theme bridge (safe to keep) */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -122,31 +68,189 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: feSpotLight) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ffffff;
-  }
+html, body, :root { height: 100%; }
+html { color-scheme: light; }
+.dark html { color-scheme: dark; }
+
+/* =========================
+   Fonts
+   ========================= */
+@font-face {
+  font-family: 'futura';
+  src: url('/fonts/futura/futura1.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }
 @font-face {
-    font-family: 'futura';
-    src: url('/fonts/futura/futura1.ttf') format('truetype');
-    
-    font-weight: normal;
-    font-style: normal;
-  }
-  @font-face {
-    font-family: 'bebas';
-    src: url('/fonts/bebas/bebas1.ttf') format('truetype');
-    
-    font-weight: normal;
-    font-style: normal;
-  }
+  font-family: 'bebas';
+  src: url('/fonts/bebas/bebas1.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
 
-
+/* =========================
+   Base
+   ========================= */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: futura, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
+/* =========================
+   Map / Leaflet animations
+   ========================= */
+@keyframes pulse {
+  0%   { r: 6;  opacity: 0.7; }
+  70%  { r: 16; opacity: 0;   }
+  100% { r: 6;  opacity: 0;   }
+}
+
+/* one ripple (used by .ripple-ring) */
+@keyframes ripple {
+  0%   { r: 6;  stroke-width: 2; opacity: 0.8; }
+  60%  { r: 26; stroke-width: 1; opacity: 0.3; }
+  100% { r: 40; stroke-width: 0; opacity: 0;   }
+}
+
+/* staggered second ripple */
+@keyframes ripple-2 {
+  0%   { r: 6;  stroke-width: 2; opacity: 0.8; }
+  60%  { r: 26; stroke-width: 1; opacity: 0.3; }
+  100% { r: 40; stroke-width: 0; opacity: 0;   }
+}
+
+/* commander bubble ripple (scale-based) */
+@keyframes commander-ripple {
+  0%   { transform: scale(0.1); opacity: 0.7; }
+  80%  { transform: scale(3);   opacity: 0;   }
+  100% { transform: scale(3);   opacity: 0;   }
+}
+
+.leaflet-interactive.pulse-ring {
+  animation: pulse 2s infinite;
+  pointer-events: none;
+  stroke: #95ffed;
+  fill: none;
+}
+.leaflet-interactive.ripple-ring {
+  animation: ripple 3s infinite;
+  pointer-events: none;
+  stroke: var(--blue-500);
+  fill: none;
+}
+.leaflet-interactive.ripple-ring.second {
+  animation: ripple-2 3s 1.5s infinite;
+  stroke: var(--blue-500);
+  fill: none;
+}
+
+.pulse-commander-1,
+.pulse-commander-2 {
+  border: 0;
+  background: rgba(168, 85, 247, 0.25); /* purple-ish */
+  animation: commander-ripple 2.4s infinite ease-out;
+}
+.pulse-commander-2 { animation-delay: 1.2s; }
+
+.event-marker {
+  font-size: 1.3rem;
+  line-height: 1;
+  text-shadow: 0 0 2px #000;
+}
+.missing-marker {
+  color: var(--red-500);
+  font-size: 1.25rem;
+  text-shadow: 0 0 2px #000;
+}
+
+/* =========================
+   Glass utilities (CSS-only)
+   ========================= */
+:where(.glass, .glass-card) {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+.dark :where(.glass, .glass-card) {
+  background: rgba(18,18,24,0.55);
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.45);
+}
+
+/* stronger fill for cards/containers */
+.glass-card { background: rgba(255,255,255,0.22); }
+.dark .glass-card { background: rgba(18,18,24,0.65); }
+
+.glass-hover {
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.glass-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+}
+
+.glass-bevel {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.35),
+    inset 0 -1px 0 rgba(0,0,0,0.2);
+}
+
+.glass-input {
+  background: rgba(255,255,255,0.22);
+  border: 1px solid rgba(255,255,255,0.20);
+  border-radius: 14px;
+  padding: 10px 12px;
+  color: inherit;
+  outline: none;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.glass-input::placeholder { color: hsl(var(--muted)); }
+.glass-input:focus {
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.6);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .6rem .9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.12));
+  color: #121318;
+  cursor: pointer;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  font-size: .95rem; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+.dark .btn { color: #f3f3f8; }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 16px 32px rgba(0,0,0,0.18); }
+
+.btn-primary {
+  background: linear-gradient(180deg, rgba(109,83,255,0.85), rgba(109,83,255,0.75));
+  color: #fff;
+  border-color: rgba(255,255,255,0.28);
+}
+.btn-ghost {
+  background: rgba(255,255,255,0.10);
+  color: inherit;
+}
+.dark .btn-ghost { background: rgba(255,255,255,0.08); }
+.btn-ghost:hover { filter: brightness(1.06); }
+
+/* Tiny pill badge */
+.badge {
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
 }
