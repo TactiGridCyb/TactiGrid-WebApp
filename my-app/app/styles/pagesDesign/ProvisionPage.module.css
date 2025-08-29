@@ -1,14 +1,91 @@
-/* ------------- entire /missions/[id]/provision page ------------- */
-
-.header {
-  text-align: center;
-  margin: 2rem 0 1rem;
-  font-size: 2rem;
-  font-weight: 600;
+.shell {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  color: #eaeef7;
 }
 
-.main {
+.bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(1200px 600px at -10% -10%, rgba(76, 110, 245, .15), transparent 60%),
+    radial-gradient(900px 500px at 110% 20%, rgba(255, 99, 132, .12), transparent 60%),
+    radial-gradient(700px 500px at 60% 110%, rgba(16, 185, 129, .12), transparent 60%),
+    linear-gradient(180deg, #0b1020 0%, #0a0f1a 100%);
+  z-index: -1;
+}
+
+.hero {
   display: flex;
   justify-content: center;
-  padding: 1rem;
+  padding: 48px 16px 24px;
+}
+
+.heroInner {
+  width: min(1100px, 100%);
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+
+.title {
+  margin: 0 0 6px 0;
+  font-size: 32px;
+  letter-spacing: .3px;
+}
+
+.missionName { color: #a3b9ff; }
+
+.sub {
+  margin: 0 0 18px 0;
+  opacity: .8;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metricCard {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  backdrop-filter: blur(8px);
+  padding: 14px 16px;
+  border-radius: 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.metricLabel {
+  font-size: 12px;
+  letter-spacing: .2px;
+  opacity: .75;
+}
+
+.metricValue {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  width: min(1100px, 100%);
+  margin: 0 auto 48px;
+  padding: 0 16px;
+}
+
+.panel {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.22);
 }

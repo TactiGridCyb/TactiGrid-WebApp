@@ -1,20 +1,21 @@
+export const runtime = 'nodejs';
+
 import { NextResponse } from 'next/server';
 import { startMissionProvision } from '@/lib/provisionMission';
 
 export async function POST(req) {
   try {
-    const { missionId, soldiers, commanders } = await req.json();
+    const body = await req.json();
+    const { missionId, soldiers = [], commanders = [] } = body;
     if (!missionId || !Array.isArray(soldiers) || !Array.isArray(commanders)) {
       return NextResponse.json({ error: 'Bad payload' }, { status: 400 });
     }
 
-    /* fire-and-forget: start server, respond 202 immediately */
-    startMissionProvision({ missionId, soldiers, commanders })
-      .catch((err) => console.error('Provision error:', err));
-
-    return NextResponse.json({ ok: true }, { status: 202 });
+    const out = await startMissionProvision({ missionId, soldiers, commanders });
+    // out.message looks like: "TLS provision server listening on :8743"
+    return NextResponse.json(out, { status: 200 });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: 'Internal' }, { status: 500 });
+    console.error('[provision] start error:', err);
+    return NextResponse.json({ error: String(err?.message || 'Internal') }, { status: 500 });
   }
 }
