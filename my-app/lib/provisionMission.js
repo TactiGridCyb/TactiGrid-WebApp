@@ -2,7 +2,6 @@
 // lib/provisionMission.js
 import tls from 'tls';
 import mongoose from 'mongoose';
-import forge from 'node-forge';
 
 import dbConnect from '@/lib/mongoose';
 import { getCA } from '@/lib/caLoader';
@@ -15,37 +14,34 @@ import { runMissionConfiguration } from '@/scripts/runConfig.js';
 const DEFAULT_PORT = Number(process.env.PROVISION_PORT || 8743);
 const DEFAULT_HOST = process.env.PROVISION_HOST || '0.0.0.0';
 
-// survive dev hot reloads
+// Persist across hot reloads
 const g = globalThis;
-g.__prov_sessions ??= new Map();   // missionId -> { stop, resend, key }
-g.__prov_portLocks ??= new Map();  // "host:port" -> missionId
+g.__prov_sessions ??= new Map();    // missionId -> { stop, resend, key }
+g.__prov_portLocks ??= new Map();   // "host:port" -> missionId
 const sessions = g.__prov_sessions;
 const portLocks = g.__prov_portLocks;
 
 const portKey = (host, port) => `${host}:${port}`;
 const toPemList = (docs) => docs.map((d) => d.certPem);
 
-const stubName = async (id) => {
+async function soldierName(id) {
   const s = await Soldier.findById(id).lean();
   return s?.fullName?.toString() || `P#${id.toString().slice(-4)}`;
-};
+}
 
-async function upsertCert(missionId, id, fullName, isCommander) {
+async function ensureCert(missionId, id, fullName, isCommander) {
   let doc = await Certificate.findOne({ subjectId: id, missionId });
   if (doc) return doc;
   const signed = await issueCertificate({ fullName, subjectId: id, isCommander });
   return Certificate.create({ subjectId: id, fullName, isCommander, missionId, ...signed });
 }
 
-function jsonSafeWrite(socket, obj) {
-  try { socket.write(JSON.stringify(obj)); } catch {}
+function safeEnd(socket, obj) {
+  try { obj && socket.write(JSON.stringify(obj)); } catch {}
   try { socket.end(); } catch {}
 }
 
-/**
- * Start a TLS provisioning server for a mission.
- * Immediate-send mode: client connects → server sends next bundle (no hello).
- */
+/** Start TLS provisioning: client connects → server immediately sends bundle (no hello). */
 export async function startMissionProvision({
   missionId,
   soldiers = [],
@@ -54,19 +50,22 @@ export async function startMissionProvision({
   port = DEFAULT_PORT,
   force = true,
 }) {
-  // Stop any previous session for this mission
-  if (sessions.has(missionId)) {
-    await sessions.get(missionId).stop().catch(() => {});
-    sessions.delete(missionId);
-  }
+  console.log('[provision] start', { missionId, host, port, force });
 
-  // Ensure global mongoose connection
+  await dbConnect();
+  // 1) Make sure app Mongo is connected (we never close it here)
   const conn = await dbConnect();
   if ((conn.connection?.readyState ?? mongoose.connection.readyState) !== 1) {
     throw new Error('Mongo is not connected');
   }
 
-  // Port ownership
+  // 2) Replace any existing session for this mission
+  if (sessions.has(missionId)) {
+    await sessions.get(missionId).stop().catch(() => {});
+    sessions.delete(missionId);
+  }
+
+  // 3) Port lock handling
   const key = portKey(host, port);
   const occupiedBy = portLocks.get(key);
   if (occupiedBy && occupiedBy !== missionId) {
@@ -74,26 +73,30 @@ export async function startMissionProvision({
     await stopMissionProvision(occupiedBy).catch(() => {});
   }
 
-  // Mission configuration
+  // 4) Load mission config (GMK/FHF/interval)
   const cfg = await runMissionConfiguration(missionId);
   const GMK = cfg.gmk;
   const FREQS = cfg.fhf;
   const INTERVAL = cfg.interval || 2000;
 
-  // CA material (via shared connection)
+  // 5) Load CA (via native driver, not Mongoose model)
   const { certPem: caCertPem, keyPem: caKeyPem } = await getCA();
 
-  // Ensure subject certs exist
+  // Validate cert/key now to avoid crashing on listen()
+  try { tls.createSecureContext({ key: caKeyPem, cert: caCertPem }); }
+  catch (e) { throw new Error(`[TLS] invalid cert/key: ${e.message}`); }
+
+  // 6) Ensure subject certs exist
   const soldierDocs = await Promise.all(
-    soldiers.map(async (id) => upsertCert(missionId, id, await stubName(id), false))
+    soldiers.map(async (id) => ensureCert(missionId, id, await soldierName(id), false))
   );
   const commanderDocs = await Promise.all(
-    commanders.map(async (id) => upsertCert(missionId, id, await stubName(id), true))
+    commanders.map(async (id) => ensureCert(missionId, id, await soldierName(id), true))
   );
   const soldierPEMs   = toPemList(soldierDocs);
   const commanderPEMs = toPemList(commanderDocs);
 
-  // Recipient queue
+  // 7) Build queue + helpers
   const allIds = [...commanders, ...soldiers].map(String);
   const unserved    = new Set(allIds);
   const resendQueue = [];
@@ -123,12 +126,10 @@ export async function startMissionProvision({
 
   const fulfill = async (socket, subjectId) => {
     if (!subjectId) return socket.destroy();
-
     const payload = await buildPayloadFor(subjectId);
     if (!payload)  return socket.destroy();
-
     unserved.delete(subjectId);
-    jsonSafeWrite(socket, payload);
+    safeEnd(socket, payload);
 
     // Notify UI (SSE)
     const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -142,30 +143,33 @@ export async function startMissionProvision({
     } catch {}
   };
 
-  // TLS server — send immediately on connect (no client hello required)
+  // 8) TLS server — send immediately on connect
   const server = tls.createServer({ key: caKeyPem, cert: caCertPem }, (socket) => {
     sockets.add(socket);
     fulfill(socket, nextRecipient());
     const cleanup = () => sockets.delete(socket);
-    socket.once('close', cleanup);
-    socket.once('error', cleanup);
+    socket.on('error', cleanup);
+    socket.on('close', cleanup);
   });
+
+  // Harden the server (don’t crash the process)
+  server.on('error', (err) => console.error('[provision] TLS server error:', err));
+  server.on('tlsClientError', (err, s) => { try { s?.destroy(); } catch {} });
+  server.on('clientError', (err, s) => { try { s?.destroy(); } catch {} });
 
   const stop = async () => {
     for (const s of sockets) { try { s.destroy(); } catch {} }
-    await new Promise((r) => server.close(() => r())); // release port fully
+    await new Promise((r) => server.close(() => r()));
     portLocks.delete(key);
-    console.log('Provision session closed:', missionId);
+    console.log('[provision] session closed:', missionId);
   };
 
+  // 9) Listen
   await new Promise((resolve, reject) => {
-    server.once('error', (e) => {
-      if (e?.code === 'EADDRINUSE') reject(new Error(`EADDRINUSE ${key}`));
-      else reject(e);
-    });
+    server.once('error', (e) => reject(e?.code === 'EADDRINUSE' ? new Error(`EADDRINUSE ${key}`) : e));
     server.listen(port, host, () => {
       portLocks.set(key, missionId);
-      console.log(`TLS provision server listening on ${host}:${port}`);
+      console.log(`[provision] listening on ${host}:${port}`);
       resolve();
     });
   });
