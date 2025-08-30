@@ -1,5 +1,5 @@
 import layout from '../styles/pagesDesign/Dashboard.module.css';
-import Navbar from '../components/Navbar.js';
+import Navbar from '../components/Navbar.jsx';
 import StatsGrid from '../components/statistics/StatsGrid';
 import SalesChart from '../components/statistics/SalesChart';
 import RecentActivity from '../components/statistics/RecentActivity';
