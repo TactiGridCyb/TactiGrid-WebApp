@@ -1,6 +1,6 @@
 // app/missions/[sessionId]/page.js   (still a server component)
 import { cookies } from 'next/headers';
-import ClientPlayer from '../../components/ClientPlayer.js';
+import ClientPlayer from '../../components/ClientPlayer.jsx';
 
 
 async function getMissionAndLog(id) {

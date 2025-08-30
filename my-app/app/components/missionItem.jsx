@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../styles/componentsDesign/missionItemsCard.module.css";
-import UploadLogButton from "../components/UploadLogButton";
+// import UploadLogButton from "../components/UploadLogButton"; // ⬅️ removed
 import ReportButton from "../components/ReportButton";
 
 export default function MissionItem({ mission }) {
@@ -26,7 +26,6 @@ export default function MissionItem({ mission }) {
 
   /* -------- local state -------- */
   const [open, setOpen] = useState(false);
-
   const toggle = () => setOpen((v) => !v);
 
   return (
@@ -93,7 +92,14 @@ export default function MissionItem({ mission }) {
           </div>
         ) : (
           <div className={styles.actions}>
-            <UploadLogButton missionId={id} className={`btn ${styles.actionBtn}`} />
+            {/* Replaced UploadLogButton with a redirect to the new Logs Upload page */}
+            <button
+              className={`btn ${styles.actionBtn}`}
+              onClick={() => router.push(`/create-mission/${id}/uploadlog`)}
+            >
+              Open&nbsp;Log&nbsp;Upload
+            </button>
+
             <button
               className={`btn btn-primary ${styles.actionBtn}`}
               onClick={() => router.push(`/create-mission/${id}/provision`)}
