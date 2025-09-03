@@ -1,14 +1,16 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import styles from "../styles/componentsDesign/Navbar.module.css";
 import LoginDialog from "../components/LoginDialog";
 
 export default function Navbar() {
   const [showDialog, setShowDialog] = useState(false);
   const [user, setUser] = useState(null);
+
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const listRef = useRef(null);
   const bubbleRef = useRef(null);
@@ -40,7 +42,7 @@ export default function Navbar() {
     const listRect = listRef.current.getBoundingClientRect();
     const r = el.getBoundingClientRect();
 
-    const left = r.left - listRect.left - 6;   // a little extra padding
+    const left = r.left - listRect.left - 6;
     const top = r.top - listRect.top - 4;
     const width = r.width + 12;
     const height = r.height + 8;
@@ -61,7 +63,7 @@ export default function Navbar() {
   useEffect(() => {
     const active = listRef.current?.querySelector(`[data-active="true"]`);
     if (active) moveBubbleTo(active);
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   return (
     <nav className={styles.navbar} role="navigation" aria-label="Main">
@@ -71,11 +73,29 @@ export default function Navbar() {
           <span className={styles.bubble} ref={bubbleRef} aria-hidden="true" />
 
           {links.map((l) => {
-            const isActive = pathname === l.href;
+            // ✅ Logged out: allow Home ("/"), gate everything else to /unconnected?next=...
+            const effectiveHref = user
+              ? l.href
+              : l.href === "/"
+              ? "/"
+              : `/unconnected?next=${encodeURIComponent(l.href)}`;
+
+            // Highlight logic:
+            // - Logged in: active if pathname === link
+            // - Logged out:
+            //    * On /unconnected: active if ?next=<link>
+            //    * On /: active only for Home
+            const nextParam = searchParams?.get("next");
+            const isActiveWhenLoggedOut =
+              (pathname === "/unconnected" && nextParam === l.href) ||
+              (pathname === "/" && l.href === "/");
+
+            const isActive = user ? pathname === l.href : isActiveWhenLoggedOut;
+
             return (
               <li key={l.href} className={styles.navItem}>
                 <Link
-                  href={l.href}
+                  href={effectiveHref}
                   className={`${styles.link} ${isActive ? styles.linkActive : ""}`}
                   data-active={isActive ? "true" : "false"}
                   aria-current={isActive ? "page" : undefined}
@@ -107,10 +127,7 @@ export default function Navbar() {
       </div>
 
       {showDialog && (
-        <LoginDialog
-          onClose={() => setShowDialog(false)}
-          onSuccess={(u) => setUser(u)}
-        />
+        <LoginDialog onClose={() => setShowDialog(false)} onSuccess={(u) => setUser(u)} />
       )}
     </nav>
   );
