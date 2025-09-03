@@ -4,7 +4,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar.js';
+import Navbar from '../components/Navbar.jsx';
 import StatsGrid from '../components/statistics/StatsGrid';
 import SalesChart from '../components/statistics/SalesChart';
 import RecentActivity from '../components/statistics/RecentActivity';
