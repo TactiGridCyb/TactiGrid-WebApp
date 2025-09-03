@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from '../styles/componentsDesign/LogPlayer.module.css';
+import Navbar from './Navbar';
 
-/* ---------- helpers ---------- */
+/* ---------- tiny helpers ---------- */
 const toMs = (v) => {
   if (!v) return 0;
   if (typeof v === 'number') return v;
@@ -32,18 +33,29 @@ const agoText = (ms) => {
   return `${h}h ago`;
 };
 
-/* ---------- marker html ---------- */
+/* ---------- marker html (CSS-Modules classes only) ---------- */
+const VARIANT_CLASS = {
+  ok: null, // default
+  commander: styles.vCommander,
+  low: styles.vLow, // unused by default, but kept for future
+  critical: styles.vCritical,
+  compromised: styles.vCompromised,
+  missing: styles.vMissing,
+  unqualified: styles.vUnqualified,
+};
+
 const markerHtml = (variant, label) => `
-  <div class="dot dot--${variant}">
-    <div class="dot-core"></div>
-    <div class="dot-glow"></div>
-    ${variant !== 'missing' ? '<div class="dot-pulse"></div>' : ''}
-    <div class="dot-label">${label ?? ''}</div>
+  <div class="${styles.dot} ${VARIANT_CLASS[variant] || ''}">
+    <div class="${styles.dotCore}"></div>
+    <div class="${styles.dotGlow}"></div>
+    ${variant !== 'missing' ? `<div class="${styles.dotPulse}"></div>` : ''}
+    <div class="${styles.dotLabel}">${label ?? ''}</div>
   </div>
 `;
+
 const divIcon = (variant, label) =>
   L.divIcon({
-    className: '',
+    className: '',              // keep empty so only our module classes apply
     html: markerHtml(variant, label),
     iconSize: [28, 28],
     iconAnchor: [14, 14],
@@ -70,6 +82,7 @@ export default function LogPlayer({ log, mission, names = {} }) {
   const startMs = sortedData.length ? toMs(sortedData[0].time_sent) : 0;
   const endMs = sortedData.length ? toMs(sortedData[sortedData.length - 1].time_sent) : 0;
   const durationMs = Math.max(endMs - startMs, 0);
+
   const sortedEvents = useMemo(
     () => [...Events].sort((a, b) => toMs(a.timestamp) - toMs(b.timestamp)),
     [Events]
@@ -87,62 +100,93 @@ export default function LogPlayer({ log, mission, names = {} }) {
   useEffect(() => {
     if (mapRef.current || !sortedData.length) return;
     const first = sortedData[0];
-    const map = L.map('log-map', { zoomControl: false, attributionControl: false })
-      .setView([first.latitude, first.longitude], 15);
+
+    const map = L.map('log-map', {
+      zoomControl: false,
+      attributionControl: false,
+    }).setView([first.latitude, first.longitude], 15);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
 
     layerRef.current.addTo(map);
     mapRef.current = map;
 
     return () => {
-      try { map.remove(); } catch {}
+      try {
+        map.remove();
+      } catch {}
       mapRef.current = null;
     };
   }, [sortedData]);
 
-  /* commander/missing/compromised at time */
+  /* compute commander/missing/compromised/unqualified at time */
   const stateAt = useCallback(
     (nowMs) => {
       const missing = new Set();
       const compromised = new Set();
+      const unqualified = new Set();
       const cutOff = new Map();
+
       const commanders = mission?.Commanders ?? mission?.commanders ?? [];
+      // ✅ show first commander from the very start
       let commander = commanders.length ? slug(commanders[0]) : null;
 
       for (const e of sortedEvents) {
         const ts = toMs(e.timestamp);
         if (ts > nowMs) break;
+
         switch (e.eventName) {
           case 'commanderSwitch':
             if (e.newCommanderID) commander = slug(e.newCommanderID);
             break;
+
           case 'missingSoldier': {
             const id = e.missingID ? slug(e.missingID) : null;
-            if (id) { missing.add(id); cutOff.set(id, ts); }
+            if (id) {
+              missing.add(id);
+              cutOff.set(id, ts);
+            }
             break;
           }
+
           case 'compromisedSoldier': {
             const id = e.compromisedID ? slug(e.compromisedID) : null;
-            if (id) { compromised.add(id); cutOff.set(id, ts); }
+            if (id) {
+              compromised.add(id);
+              cutOff.set(id, ts);
+            }
             break;
           }
+
+          // 🟡 new event
+          case 'UnqualifiedCommander': {
+            const id =
+              (e.unqualifiedID && slug(e.unqualifiedID)) ||
+              (e.soldierID && slug(e.soldierID)) ||
+              (e.id && slug(e.id)) ||
+              null;
+            if (id) unqualified.add(id);
+            break;
+          }
+
           default:
             break;
         }
       }
-      return { commander, missing, compromised, cutOff };
+      return { commander, missing, compromised, unqualified, cutOff };
     },
     [mission, sortedEvents]
   );
 
-  /* ✅ DERIVED ROSTER (no setState here) */
+  /* derived roster at current time (no setState) */
   const nowMs = startMs + t;
+
   const roster = useMemo(() => {
-    const { commander, missing, compromised, cutOff } = stateAt(nowMs);
+    const { commander, missing, compromised, unqualified, cutOff } = stateAt(nowMs);
 
     // latest row per soldier up to now
     const latest = new Map();
@@ -150,7 +194,7 @@ export default function LogPlayer({ log, mission, names = {} }) {
       const ts = toMs(row.time_sent);
       if (ts > nowMs) break;
       const id = slug(row.soldierId);
-      if (cutOff.has(id) && ts > cutOff.get(id)) continue;
+      if (cutOff.has(id) && ts > cutOff.get(id)) continue; // ignore after cut-off
       latest.set(id, row);
     }
 
@@ -164,7 +208,8 @@ export default function LogPlayer({ log, mission, names = {} }) {
       if (id === commander) status = 'commander';
       else if (compromised.has(id)) status = 'compromised';
       else if (missing.has(id)) status = 'missing';
-      else if (heartRate < 50) status = 'low';
+      else if (unqualified.has(id)) status = 'unqualified';
+      else if (heartRate > 160 || heartRate < 60) status = 'critical'; // 🔴 HR rule
 
       list.push({
         id,
@@ -177,38 +222,66 @@ export default function LogPlayer({ log, mission, names = {} }) {
       });
     });
 
-    // commander first, then compromised, missing, low, ok
-    const weight = { commander: 0, compromised: 1, missing: 2, low: 3, ok: 4 };
-    list.sort((a, b) => (weight[a.status] - weight[b.status]) || a.name.localeCompare(b.name));
+    // priority: commander > critical > compromised > missing > unqualified > ok
+    const weight = {
+      commander: 0,
+      critical: 1,
+      compromised: 2,
+      missing: 3,
+      unqualified: 4,
+      ok: 5,
+    };
+    list.sort(
+      (a, b) => (weight[a.status] - weight[b.status]) || a.name.localeCompare(b.name)
+    );
+
     return list;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortedData, displayName, stateAt, nowMs]);
 
-  /* draw markers from roster (NO setState) */
+  /* draw markers each frame (no setState) */
   useEffect(() => {
     if (!mapRef.current) return;
     layerRef.current.clearLayers();
 
-    // draw roster
+    // soldiers
     for (const s of roster) {
       const label = s.name?.[0]?.toUpperCase() ?? '';
       const icon = divIcon(s.status, label);
+
       L.marker([s.lat, s.lng], { icon })
-        .bindTooltip(`${s.name} • HR ${s.hr}`, { permanent: true, direction: 'top' })
+        .bindTooltip(`${s.name} • HR ${s.hr}`, {
+          permanent: true,
+          direction: 'top',
+          className: styles.tip, // local tooltip class
+        })
         .addTo(layerRef.current);
     }
 
-    // draw generic ⚡events up to now, near first soldier if any
+    // generic ⚡ events up to now (skip the typed ones we already visualize)
     const any = roster[0];
     if (any) {
       for (const e of sortedEvents) {
         const ts = toMs(e.timestamp);
         if (ts > nowMs) break;
-        if (['commanderSwitch', 'missingSoldier', 'compromisedSoldier'].includes(e.eventName)) continue;
+        if (
+          e.eventName === 'commanderSwitch' ||
+          e.eventName === 'missingSoldier' ||
+          e.eventName === 'compromisedSoldier' ||
+          e.eventName === 'UnqualifiedCommander'
+        )
+          continue;
+
         L.marker([any.lat, any.lng], {
-          icon: L.divIcon({ className: styles.eventIcon, html: '⚡' }),
+          icon: L.divIcon({
+            className: styles.eventIcon,
+            html: '⚡',
+            iconSize: [26, 26],
+            iconAnchor: [13, 13],
+          }),
         })
-          .bindTooltip(`${e.eventName} @ ${new Date(ts).toLocaleTimeString()}`)
+          .bindTooltip(`${e.eventName} @ ${new Date(ts).toLocaleTimeString()}`, {
+            className: styles.tip,
+          })
           .addTo(layerRef.current);
       }
     }
@@ -228,11 +301,18 @@ export default function LogPlayer({ log, mission, names = {} }) {
   }, [playing, speed, durationMs]);
 
   const centerOn = (lat, lng) => {
-    try { mapRef.current?.setView([lat, lng], 16, { animate: true }); } catch {}
+    try {
+      mapRef.current?.setView([lat, lng], 16, { animate: true });
+    } catch {}
   };
 
   return (
+    
+
+
     <div className={styles.shell}>
+      
+
       {/* top bar */}
       <div className={styles.topbar}>
         <div className={styles.status}>
@@ -245,9 +325,14 @@ export default function LogPlayer({ log, mission, names = {} }) {
         <div className={styles.controls}>
           <button
             className={`${styles.btn} ${styles.btnGhost}`}
-            onClick={() => { setT(0); setPlaying(false); }}
+            onClick={() => {
+              setT(0);
+              setPlaying(false);
+            }}
             title="Go to start"
-          >⏮</button>
+          >
+            ⏮
+          </button>
 
           <button
             className={`${styles.btn} ${styles.btnPrimary}`}
@@ -258,10 +343,15 @@ export default function LogPlayer({ log, mission, names = {} }) {
 
           <button
             className={`${styles.btn} ${styles.btnGhost}`}
-            onClick={() => { setT(durationMs); setPlaying(false); }}
+            onClick={() => {
+              setT(durationMs);
+              setPlaying(false);
+            }}
             title="Go to end"
             disabled={!durationMs}
-          >⏭</button>
+          >
+            ⏭
+          </button>
 
           <label className={styles.speed}>
             Speed
@@ -278,7 +368,8 @@ export default function LogPlayer({ log, mission, names = {} }) {
           </div>
         </div>
       </div>
-
+            <br />
+            
       {/* main grid: map + roster */}
       <div className={styles.grid}>
         <div id="log-map" className={styles.map} />
@@ -300,10 +391,20 @@ export default function LogPlayer({ log, mission, names = {} }) {
                     <div className={styles.cardTitle}>{s.name}</div>
                     <div className={styles.cardMeta}>
                       <span className={`${styles.chip} ${styles['chip--' + s.status]}`}>
-                        {s.status === 'ok' ? 'OK' : s.status}
+                        {s.status === 'ok'
+                          ? 'OK'
+                          : s.status === 'critical'
+                          ? 'CRITICAL HR'
+                          : s.status}
                       </span>
                       <span className={styles.dotSep} />
-                      <span className={s.hr < 50 ? styles.hrLow : styles.hrGood}>HR {s.hr}</span>
+                      <span
+                        className={
+                          s.hr > 160 || s.hr < 60 ? styles.hrLow : styles.hrGood
+                        }
+                      >
+                        HR {s.hr}
+                      </span>
                       <span className={styles.dotSep} />
                       <span className={styles.muted}>{agoText(s.lastUpdateMs)}</span>
                     </div>
@@ -343,13 +444,16 @@ export default function LogPlayer({ log, mission, names = {} }) {
           <span className={`${styles.legendDot} ${styles.ldOk}`} /> Soldier
         </span>
         <span className={styles.legendItem}>
-          <span className={`${styles.legendDot} ${styles.ldLow}`} /> Low HR
+          <span className={`${styles.legendDot} ${styles.ldCritical}`} /> Critical HR
         </span>
         <span className={styles.legendItem}>
           <span className={`${styles.legendDot} ${styles.ldComp}`} /> Compromised
         </span>
         <span className={styles.legendItem}>
           <span className={`${styles.legendDot} ${styles.ldMiss}`} /> Missing
+        </span>
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendDot} ${styles.ldUnqualified}`} /> Unqualified Cmdr
         </span>
       </div>
     </div>
