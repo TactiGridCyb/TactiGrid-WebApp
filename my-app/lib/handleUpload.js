@@ -13,9 +13,9 @@ import { getCA } from '@/lib/caLoader';
 /* ────────── decrypt helpers ────────── */
 function decryptGMK(b64, caKeyPem) {
   return crypto.privateDecrypt(
-    { key: caKeyPem, padding: crypto.constants.RSA_PKCS1_PADDING },
-    Buffer.from(b64, 'base64'),
-  );
+  { key: caKeyPem, padding: crypto.constants.RSA_PKCS1_PADDING },
+  Buffer.from(b64, 'base64')
+);
 }
 
 async function decryptLogChacha(b64, gmkBuf) {
@@ -71,6 +71,7 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
     return { status: 400, body: { error: 'certificate-parse-fail' } };
   }
 
+  console.log("1")
   // 3) Decrypt GMK
   let gmkBuf;
   try {
@@ -79,6 +80,7 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
     return { status: 400, body: { error: err.message } };
   }
 
+ console.log("2")
   // 4) Decrypt log
   let plainLog;
   try {
@@ -86,7 +88,7 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
   } catch (e) {
     return { status: 400, body: { error: e.message } };
   }
-
+ console.log("3")
   // 5) Integrity check
   if (String(plainLog.Mission) !== String(missionId)) {
     return { status: 400, body: { error: 'mission-id-mismatch' } };
