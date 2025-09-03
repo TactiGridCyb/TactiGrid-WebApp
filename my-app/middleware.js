@@ -3,14 +3,25 @@ import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
 const AUTH_API_PREFIX = "/api/auth";
-// treat any file-like path as a static asset (fonts, images, css, js, maps)
 const EXT_RE = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf|otf|eot|css|js|map)$/i;
 
+// Narrowly allow SSR (server-side) GETs to this API only
+function isMissionFetch(pathname, method) {
+  return method === "GET" && /^\/api\/missionFunctions\/[^/]+$/.test(pathname);
+}
+
+// Browsers send Fetch-Metadata headers; Node/SSR usually doesn't.
+// If there is NO sec-fetch-site, we treat it as a server-side/internal fetch.
+function isServerSideFetch(req) {
+  return !req.headers.get("sec-fetch-site");
+}
+
 async function isAuthed(req) {
-  const token = req.cookies.get("authToken")?.value; // <- your cookie name
-  if (!token) return false;
+  const token = req.cookies.get("authToken")?.value;
+  const secret = process.env.JWT_SECRET;
+  if (!token || !secret) return false;
   try {
-    await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET));
+    await jwtVerify(token, new TextEncoder().encode(secret));
     return true;
   } catch {
     return false;
@@ -20,13 +31,13 @@ async function isAuthed(req) {
 export async function middleware(req) {
   const { pathname, searchParams } = req.nextUrl;
 
-  // 0) BYPASS all static assets & Next internals (fonts included)
+  // 0) Bypass static & Next internals (fonts included)
   if (
-    pathname.startsWith("/_next") ||           // _next/static, _next/image, _next/font
+    pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
     pathname.startsWith("/images") ||
     pathname.startsWith("/assets") ||
-    pathname.startsWith("/fonts") ||           // if you serve /public/fonts/*
+    pathname.startsWith("/fonts") ||
     EXT_RE.test(pathname) ||
     ["/robots.txt", "/sitemap.xml", "/manifest.webmanifest"].includes(pathname)
   ) {
@@ -37,9 +48,17 @@ export async function middleware(req) {
   const isAuthApi = pathname.startsWith(AUTH_API_PREFIX);
   const authed = await isAuthed(req);
 
-  // 1) API protection (allow only /api/auth/** when logged out)
+  // 1) API protection
   if (isApi) {
+    // Always allow auth endpoints
     if (isAuthApi) return NextResponse.next();
+
+    // ✅ Allow ONLY server-side GETs to /api/missionFunctions/:id
+    if (isServerSideFetch(req) && isMissionFetch(pathname, req.method)) {
+      return NextResponse.next();
+    }
+
+    // Everything else requires user auth
     if (!authed) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -49,8 +68,7 @@ export async function middleware(req) {
     return NextResponse.next();
   }
 
-  // 2) PAGE protection
-  // Logged-out users can see "/" and "/unconnected" only.
+  // 2) Page protection — logged-out users can see "/" and "/unconnected" only
   if (!authed) {
     const isHome = pathname === "/";
     const isUnconnected = pathname === "/unconnected";
@@ -59,10 +77,8 @@ export async function middleware(req) {
       url.pathname = "/unconnected";
       const q = searchParams.toString();
       url.searchParams.set("next", pathname + (q ? `?${q}` : ""));
-      // Use redirect if you want the URL to change to /unconnected
-      // Use rewrite if you want to keep the original path but render Unconnected
+      // change URL to /unconnected; use rewrite(url) if you prefer keeping original
       return NextResponse.redirect(url);
-      // return NextResponse.rewrite(url);
     }
   }
 
@@ -72,7 +88,6 @@ export async function middleware(req) {
 export const config = {
   matcher: [
     "/api/:path*",
-    // run on all pages EXCEPT these static buckets
     "/((?!_next/static|_next/image|_next/font|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|images|assets|fonts).*)",
   ],
 };
