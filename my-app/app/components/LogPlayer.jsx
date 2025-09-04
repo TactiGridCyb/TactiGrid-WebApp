@@ -132,9 +132,43 @@ export default function LogPlayer({ log, mission, names = {} }) {
     () => [...Data].sort((a, b) => toMs(a.time_sent) - toMs(b.time_sent)),
     [Data]
   );
-  const startMs = sortedData.length ? toMs(sortedData[0].time_sent) : 0;
-  const endMs = sortedData.length ? toMs(sortedData[sortedData.length - 1].time_sent) : 0;
+
+
+
+
+  const firstDataMs = sortedData.length
+    ? toMs(sortedData[0].time_sent)
+    : Number.POSITIVE_INFINITY;
+  const lastDataMs = sortedData.length
+    ? toMs(sortedData[sortedData.length - 1].time_sent)
+    : Number.NEGATIVE_INFINITY;
+
+  // event bounds
+  let firstEventMs = Number.POSITIVE_INFINITY;
+  let lastEventMs = Number.NEGATIVE_INFINITY;
+  for (const e of Events) {
+    const ts = eventTs(e);
+    if (!Number.isFinite(ts)) continue;
+    if (ts < firstEventMs) firstEventMs = ts;
+    if (ts > lastEventMs) lastEventMs = ts;
+  }
+
+  // start = earliest of data/events (fallback 0 if neither exists)
+  const earliest = Math.min(firstDataMs, firstEventMs);
+  const startMs = Number.isFinite(earliest) ? earliest : 0;
+
+  // end = latest of data/events + 3000ms buffer
+  const latest = Math.max(lastDataMs, lastEventMs);
+  const endMs = Number.isFinite(latest) ? latest + 5000 : startMs;
+
+  // duration ≥ 0
   const durationMs = Math.max(endMs - startMs, 0);
+
+
+
+
+
+
 
   const sortedEvents = useMemo(
     () => [...Events].sort((a, b) => eventTs(a) - eventTs(b)),
@@ -253,7 +287,7 @@ export default function LogPlayer({ log, mission, names = {} }) {
     return () => {
       try {
         map.remove();
-      } catch {}
+      } catch { }
       mapRef.current = null;
     };
   }, [sortedData]);
@@ -410,12 +444,12 @@ export default function LogPlayer({ log, mission, names = {} }) {
         e.eventName === 'commanderSwitch'
           ? asStr(pick(e, ['newCommanderID', 'newCommander'])).trim()
           : e.eventName === 'missingSoldier'
-          ? asStr(pick(e, ['missingID', 'missingName'])).trim()
-          : e.eventName === 'compromisedSoldier'
-          ? asStr(pick(e, ['compromisedID', 'compromisedName'])).trim()
-          : isHrEvent(e)
-          ? asStr(pick(e, ['soldierName', 'subjectName', 'name'])).trim()
-          : '';
+            ? asStr(pick(e, ['missingID', 'missingName'])).trim()
+            : e.eventName === 'compromisedSoldier'
+              ? asStr(pick(e, ['compromisedID', 'compromisedName'])).trim()
+              : isHrEvent(e)
+                ? asStr(pick(e, ['soldierName', 'subjectName', 'name'])).trim()
+                : '';
 
       const subjectId = toIdStr(pick(e, ['soldierID', 'soldierId', 'subjectID', 'subjectId', 'id']));
 
@@ -486,7 +520,7 @@ export default function LogPlayer({ log, mission, names = {} }) {
   const centerOn = (lat, lng) => {
     try {
       mapRef.current?.setView([lat, lng], 16, { animate: true });
-    } catch {}
+    } catch { }
   };
 
   return (
