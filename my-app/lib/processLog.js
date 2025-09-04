@@ -3,18 +3,19 @@ import mongoose   from 'mongoose';
 import Certificate from '@/models/Certificate';
 import Log        from '@/models/Log';
 import Revoked    from '@/models/RevokedCert';
+import { interCaLoader } from '@/lib/interCaLoader'; // ⬅️ added
 
-const PASS = '12345';               // decrypt CA key
+const PASS = '12345';               // decrypt CA key (left as-is, now unused)
 const pki  = forge.pki;
 
 export async function processEncryptedLog({ missionId, certPem, gmkEncB64, logEncB64 }) {
   /* 0) connect once */
   await mongoose.connect(process.env.MONGODB_URI);
 
-  /* 1) Load CA creds */
-  const caDoc   = await mongoose.connection.db.collection('CA').findOne({ _id:'root-ca' });
-  const caCert  = pki.certificateFromPem(caDoc.cert);
-  const caKey   = pki.decryptRsaPrivateKey(caDoc.privateKey, PASS);
+  /* 1) Load CA creds (now via INTERMEDIATE loader) */
+  const { certPem: caCertPem, keyPem: caKeyPem } = await interCaLoader(); // ⬅️ changed
+  const caCert  = pki.certificateFromPem(caCertPem);                       // ⬅️ changed
+  const caKey   = pki.privateKeyFromPem(caKeyPem);                         // ⬅️ changed
 
   /* 2) Commander cert validation + revoke */
   const commanderCert = pki.certificateFromPem(certPem);

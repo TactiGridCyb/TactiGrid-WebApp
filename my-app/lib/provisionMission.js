@@ -8,6 +8,7 @@ import Soldier              from '@/models/Soldier';
 import RevokedCert          from '@/models/RevokedCert';             // ← NEW
 import { issueCertificate } from '@/lib/issueCertificate';
 import { runMissionConfiguration } from '@/scripts/runConfig.js';
+import { interCaLoader } from '@/lib/interCaLoader'; // ⬅️ added
 
 /* ── tweakables filled after we inspect the mission ── */
 let GMK;                         // 32-char hex
@@ -134,14 +135,8 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
   await mongoose.connect(process.env.MONGODB_URI);
 
   /* 2️⃣ pull Root-CA from DB */
-  const caDoc = await mongoose.connection.db.collection('CA').findOne({ _id: 'root-ca' });
-  if (!caDoc) throw new Error('Root-CA doc missing');
-
-  const pki        = forge.pki;
-  const caCertPem  = caDoc.cert;
-  const caKeyPem   = forge.pki.privateKeyToPem(
-    pki.decryptRsaPrivateKey(caDoc.privateKey, PASS)
-  );
+  const pki = forge.pki;
+  const { certPem: caCertPem, keyPem: caKeyPem } = await interCaLoader(); // ⬅️ switched to Intermediate
 
   /* 3️⃣ ensure FRESH certificates for everyone (revoke+reissue each time) */
   const soldierDocs = await Promise.all(

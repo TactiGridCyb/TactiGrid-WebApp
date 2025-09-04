@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { MongoClient } from "mongodb";
 import forge from "node-forge";
 import crypto from "crypto";
+import { interCaLoader } from "@/lib/interCaLoader"; // ⬅️ switched to Intermediate CA
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.DB_NAME;
-const CA_PASS = "12345"; // ✅ Confirmed correct password
+const CA_PASS = "12345"; // kept as-is (unused now), per your request
 
 let isCommanderUDPStarted = false;
 let commanderCertPem = null;
@@ -42,52 +43,52 @@ export async function POST() {
             console.log("✅ Received Encrypted Log");
 
             if (commanderCertPem && encryptedGmkB64 && logPacket) {
-                console.log("🚀 Processing mission upload...");
+              console.log("🚀 Processing mission upload...");
 
-                // Step 1: Check certificate
-                const res = await fetch("http://localhost:3000/api/cert/verify", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ certPem: commanderCertPem }),
-                });
-                const certResult = await res.json();
+              // Step 1: Check certificate (unchanged; your verify route uses interCaLoader)
+              const res = await fetch("http://localhost:3000/api/cert/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ certPem: commanderCertPem }),
+              });
+              const certResult = await res.json();
 
-                if (!certResult.valid) {
-                  console.log("❌ Certificate is revoked");
-                  const message = Buffer.from("❌ Certificate is revoked");
-                  udpServer.send(message, rinfo.port, rinfo.address);
-                  return;
-                }
-
-                // Step 2: Check mission
-                const client = new MongoClient(uri);
-                await client.connect();
-                const db = client.db(dbName);
-                const mission = await db.collection("missions").findOne({ missionId: logPacket.missionId });
-
-                if (!mission) {
-                  console.log("❌ Mission not found:", logPacket.missionId);
-                  const message = Buffer.from("❌ Mission not found");
-                  udpServer.send(message, rinfo.port, rinfo.address);
-                  await client.close();
-                  return;
-                }
-                await client.close();
-
-                // Step 3: All checks passed — proceed
-                await revokeCommanderCertificate(commanderCertPem);
-                const gmk = await decryptGMK(encryptedGmkB64);
-                const decryptedLog = decryptLogWithGMK(logPacket.data, gmk);
-                const logId = await insertDecryptedLog(decryptedLog, logPacket);
-                await updateMission(logPacket.missionId, logId);
-
-                const message = Buffer.from("✅ Upload complete. Mission updated, log saved, cert revoked.");
+              if (!certResult.valid) {
+                console.log("❌ Certificate is revoked");
+                const message = Buffer.from("❌ Certificate is revoked");
                 udpServer.send(message, rinfo.port, rinfo.address);
-
-                commanderCertPem = null;
-                encryptedGmkB64 = null;
-                logPacket = null;
+                return;
               }
+
+              // Step 2: Check mission (unchanged)
+              const client = new MongoClient(uri);
+              await client.connect();
+              const db = client.db(dbName);
+              const mission = await db.collection("missions").findOne({ missionId: logPacket.missionId });
+
+              if (!mission) {
+                console.log("❌ Mission not found:", logPacket.missionId);
+                const message = Buffer.from("❌ Mission not found");
+                udpServer.send(message, rinfo.port, rinfo.address);
+                await client.close();
+                return;
+              }
+              await client.close();
+
+              // Step 3: All checks passed — proceed (unchanged actions)
+              await revokeCommanderCertificate(commanderCertPem);
+              const gmk = await decryptGMK(encryptedGmkB64);            // ⬅️ now uses Intermediate via lib
+              const decryptedLog = decryptLogWithGMK(logPacket.data, gmk);
+              const logId = await insertDecryptedLog(decryptedLog, logPacket);
+              await updateMission(logPacket.missionId, logId);
+
+              const message = Buffer.from("✅ Upload complete. Mission updated, log saved, cert revoked.");
+              udpServer.send(message, rinfo.port, rinfo.address);
+
+              commanderCertPem = null;
+              encryptedGmkB64 = null;
+              logPacket = null;
+            }
 
             break;
         }
@@ -127,23 +128,22 @@ async function revokeCommanderCertificate(certPem) {
   console.log("🔒 Revoked cert serial:", json.serial);
 }
 
+// ⬇️ Uses lib loader to get the INTERMEDIATE CA private key
 async function decryptGMK(encryptedB64) {
-  const client = new MongoClient(uri);
-  await client.connect();
-  const db = client.db(dbName);
-  const caDoc = await db.collection("CA").findOne({ _id: "root-ca" });
   const pki = forge.pki;
 
-  const privateKey = pki.decryptRsaPrivateKey(caDoc.privateKey, CA_PASS);
-  if (!privateKey) throw new Error("❌ Failed to decrypt CA private key.");
+  // get decrypted intermediate private key from your lib
+  const { keyPem } = await interCaLoader();   // <-- Intermediate CA
+  const privateKey = pki.privateKeyFromPem(keyPem);
 
-  const encryptedBytes = Buffer.from(encryptedB64, "base64");
+  // feed forge a base64-decoded byte string
+  const encryptedBytes = forge.util.decode64(encryptedB64);
+
   const decryptedBytes = privateKey.decrypt(encryptedBytes, "RSA-OAEP", {
     md: forge.md.sha256.create(),
     mgf1: forge.mgf.mgf1.create(forge.md.sha256.create()),
   });
 
-  await client.close();
   return Buffer.from(decryptedBytes, "binary");
 }
 
