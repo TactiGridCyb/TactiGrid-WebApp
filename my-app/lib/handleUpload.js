@@ -1,21 +1,22 @@
 /* eslint-disable no-console */
 // lib/logs/handleUpload.js
-import crypto from 'crypto';
-import forge from 'node-forge';
-import sodium from 'libsodium-wrappers';
+import crypto  from 'crypto';
+import forge   from 'node-forge';
+import sodium  from 'libsodium-wrappers';
 
-import dbConnect from '@/lib/mongoose';
-import Log from '@/models/LogsModel';
-import Mission from '@/models/MissionModel';
+import dbConnect   from '@/lib/mongoose';
+import Log         from '@/models/LogsModel';
+import Mission     from '@/models/MissionModel';
 import RevokedCert from '@/models/RevokedCert';
-import { getCA } from '@/lib/caLoader';
+import Certificate from '@/models/Certificate'; // ← NEW
+import { getCA }   from '@/lib/caLoader';
 
 /* ────────── decrypt helpers ────────── */
 function decryptGMK(b64, caKeyPem) {
   return crypto.privateDecrypt(
-  { key: caKeyPem, padding: crypto.constants.RSA_PKCS1_PADDING },
-  Buffer.from(b64, 'base64')
-);
+    { key: caKeyPem, padding: crypto.constants.RSA_PKCS1_PADDING },
+    Buffer.from(b64, 'base64')
+  );
 }
 
 async function decryptLogChacha(b64, gmkBuf) {
@@ -71,7 +72,6 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
     return { status: 400, body: { error: 'certificate-parse-fail' } };
   }
 
-  console.log("1")
   // 3) Decrypt GMK
   let gmkBuf;
   try {
@@ -80,7 +80,6 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
     return { status: 400, body: { error: err.message } };
   }
 
- console.log("2")
   // 4) Decrypt log
   let plainLog;
   try {
@@ -88,19 +87,75 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
   } catch (e) {
     return { status: 400, body: { error: e.message } };
   }
- console.log("3")
+
   // 5) Integrity check
   if (String(plainLog.Mission) !== String(missionId)) {
     return { status: 400, body: { error: 'mission-id-mismatch' } };
   }
 
   // 6) Store & mark finished
+  let logId;
   try {
-    const { _id: logId } = await Log.create(plainLog);
+    const created = await Log.create(plainLog);
+    logId = created._id;
     await Mission.findByIdAndUpdate(missionId, { IsFinished: true, Log: logId });
-    return { status: 200, body: { ok: true, logId: String(logId) } };
   } catch (err) {
     console.error('DB-INSERT-FAIL', err);
     return { status: 400, body: { error: err.message } };
   }
+
+  // 7) Revoke ALL soldiers' certificates for this mission (and delete the cert docs)
+  let revokeStats = { revokedCount: 0, deletedCount: 0 };
+  try {
+    revokeStats = await revokeAllMissionSoldierCerts(missionId);
+  } catch (err) {
+    // Do not fail the upload if revocation hits an issue; report it back to caller
+    console.error('REVOKE-FAIL', err);
+    return { status: 200, body: { ok: true, logId: String(logId), revokeError: err.message } };
+  }
+
+  return {
+    status: 200,
+    body: { ok: true, logId: String(logId), ...revokeStats }
+  };
+}
+
+/* ────────── helper: revoke every soldier cert for a mission ────────── */
+async function revokeAllMissionSoldierCerts(missionId) {
+  // Pull soldiers from Mission doc (supports both Soldiers/soldiers shapes)
+  const mission = await Mission.findById(missionId).lean();
+  if (!mission) throw new Error('mission-not-found');
+
+  const soldiers =
+    mission.Soldiers ?? mission.soldiers ?? [];
+  if (!Array.isArray(soldiers) || soldiers.length === 0) {
+    return { revokedCount: 0, deletedCount: 0 };
+  }
+
+  // Find all soldier certs for this mission
+  const certs = await Certificate.find(
+    { missionId, subjectId: { $in: soldiers } },
+    { _id: 1, serialNumber: 1 }
+  ).lean();
+
+  if (!certs.length) return { revokedCount: 0, deletedCount: 0 };
+
+  // Ensure unique index for revoked serials (idempotent + safe for concurrency)
+  await RevokedCert.collection.createIndex({ serial: 1 }, { unique: true });
+
+  // Upsert all serials into RevokedCert in bulk
+  const now = new Date();
+  const ops = certs.map(c => ({
+    updateOne: {
+      filter: { serial: c.serialNumber },
+      update: { $setOnInsert: { serial: c.serialNumber }, $set: { revokedAt: now } },
+      upsert: true,
+    }
+  }));
+  await RevokedCert.bulkWrite(ops, { ordered: false });
+
+  // Delete the actual cert docs so nothing remains retrievable post-mission
+  const del = await Certificate.deleteMany({ _id: { $in: certs.map(c => c._id) } });
+
+  return { revokedCount: certs.length, deletedCount: del?.deletedCount ?? 0 };
 }

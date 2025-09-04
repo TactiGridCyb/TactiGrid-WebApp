@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 
 import Certificate          from '@/models/Certificate';
 import Soldier              from '@/models/Soldier';
+import RevokedCert          from '@/models/RevokedCert';             // ← NEW
 import { issueCertificate } from '@/lib/issueCertificate';
 import { runMissionConfiguration } from '@/scripts/runConfig.js';
 
@@ -34,11 +35,49 @@ const stubName = async (id) => {
   return soldier?.fullName?.toString() || `P#${id.toString().slice(-4)}`;
 };
 
-async function ensureCert(missionId, subjectId, fullName, isCommander) {
-  let doc = await Certificate.findOne({ subjectId, missionId });
-  if (doc) return doc;
+/* ────────────────────────────────────────────────────────────────
+ * ensureFreshCert:
+ * - revoke any existing cert(s) for (subjectId, missionId)
+ * - delete them
+ * - issue & persist a new cert
+ * - return the new doc
+ * ──────────────────────────────────────────────────────────────── */
+async function ensureFreshCert(missionId, subjectId, fullName, isCommander) {
+  // 1) find all existing certs for this pair
+  const old = await Certificate.find({ subjectId, missionId });
+
+  if (old.length) {
+    // make sure we can upsert revocations safely
+    await RevokedCert.collection.createIndex({ serial: 1 }, { unique: true });
+
+    // 1a) record revocation for each existing cert (idempotent)
+    for (const cert of old) {
+      try {
+        const serial = forge.pki.certificateFromPem(cert.certPem).serialNumber;
+        await RevokedCert.updateOne(
+          { serial },
+          { $setOnInsert: { serial }, $set: { revokedAt: new Date() } },
+          { upsert: true }
+        );
+      } catch (e) {
+        console.warn('[provision] failed to parse certPem for revocation:', e?.message);
+      }
+    }
+
+    // 1b) remove old cert docs so we keep exactly one active per pair
+    await Certificate.deleteMany({ _id: { $in: old.map(c => c._id) } });
+  }
+
+  // 2) issue & persist a fresh cert
   const signed = await issueCertificate({ fullName, subjectId, isCommander });
-  doc = await Certificate.create({ subjectId, fullName, isCommander, missionId, ...signed });
+  const doc = await Certificate.create({
+    subjectId,
+    fullName,
+    isCommander,
+    missionId,
+    ...signed, // certPem, keyPem, serialNumber, validFrom, validTo
+  });
+
   return doc;
 }
 
@@ -51,7 +90,6 @@ function attachSocketGuards(socket, socketsSet) {
   socketsSet.add(socket);
   const cleanup = () => socketsSet.delete(socket);
   socket.on('close', cleanup);
-  // Swallow resets so they don't bubble to uncaughtException
   socket.on('error', (err) => {
     if (err?.code !== 'ECONNRESET') console.warn('[provision] socket error:', err?.message);
     cleanup();
@@ -66,7 +104,6 @@ async function stopActiveServer() {
   if (!st?.server) return;
   st.closing = true;
 
-  // destroy any open sockets to unblock close
   for (const s of st.sockets) { try { s.destroy(); } catch {} }
   await new Promise((resolve) => {
     try { st.server.close(() => resolve()); }
@@ -79,13 +116,11 @@ async function stopActiveServer() {
 
 /* ------------------------------------------------------------------ *
  *  startMissionProvision({ missionId, soldiers, commanders })        *
- *  - ensures singleton; returns when LISTENING                        *
  * ------------------------------------------------------------------ */
 export async function startMissionProvision({ missionId, soldiers, commanders }) {
-  // guarantee singleton
   await stopActiveServer();
 
-  /* 0️⃣  pull GMK / FHF / interval from the linked Configuration */
+  /* 0️⃣ pull GMK / FHF / interval */
   const cfgOut = await runMissionConfiguration(missionId);
   GMK      = cfgOut.gmk;
   FREQS    = cfgOut.fhf;
@@ -95,13 +130,11 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
   console.log('✅ FHF:', FREQS);
   console.log('⏱️  interval:', INTERVAL, 'ms');
 
-  /* 1️⃣  connect to Mongo (keep your original behavior) */
+  /* 1️⃣ connect to Mongo */
   await mongoose.connect(process.env.MONGODB_URI);
 
-  /* 2️⃣  pull Root-CA from DB (unchanged from your working code) */
-  const caDoc = await mongoose.connection.db
-    .collection('CA')
-    .findOne({ _id: 'root-ca' });
+  /* 2️⃣ pull Root-CA from DB */
+  const caDoc = await mongoose.connection.db.collection('CA').findOne({ _id: 'root-ca' });
   if (!caDoc) throw new Error('Root-CA doc missing');
 
   const pki        = forge.pki;
@@ -110,27 +143,31 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
     pki.decryptRsaPrivateKey(caDoc.privateKey, PASS)
   );
 
-  /* 3️⃣  ensure certificates for every subject in the queue */
+  /* 3️⃣ ensure FRESH certificates for everyone (revoke+reissue each time) */
   const soldierDocs = await Promise.all(
-    soldiers.map(async (id) => ensureCert(missionId, id, await stubName(id), false))
+    soldiers.map(async (id) =>
+      ensureFreshCert(missionId, id, await stubName(id), false)
+    )
   );
   const commanderDocs = await Promise.all(
-    commanders.map(async (id) => ensureCert(missionId, id, await stubName(id), true))
+    commanders.map(async (id) =>
+      ensureFreshCert(missionId, id, await stubName(id), true)
+    )
   );
 
   const soldierPEMs   = toPemList(soldierDocs);
   const commanderPEMs = toPemList(commanderDocs);
 
-  /* 4️⃣  prepare the ordered queue (commanders first) + resend queue */
+  /* 4️⃣ queue (commanders first) */
   const queueIds    = [...commanders, ...soldiers].map(String);
   let index         = 0;
-  const resendQueue = [];   // appended items are served AFTER the main queue
+  const resendQueue = [];
 
-  /* 5️⃣  TLS server */
+  /* 5️⃣ TLS server */
   const sockets = new Set();
   const pickNext = () => {
-    if (index < queueIds.length) return queueIds[index++];  // main queue first
-    if (resendQueue.length)    return resendQueue.shift();  // then resends (at end)
+    if (index < queueIds.length) return queueIds[index++];
+    if (resendQueue.length)      return resendQueue.shift();
     return null;
   };
 
@@ -140,11 +177,7 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
       attachSocketGuards(socket, sockets);
 
       const subjectId = pickNext();
-      if (!subjectId) {
-        // nothing to serve; just close this connection politely
-        try { socket.end(); } catch {}
-        return;
-      }
+      if (!subjectId) { try { socket.end(); } catch {}; return; }
 
       const doc = await Certificate.findOne({ subjectId, missionId });
       if (!doc) { try { socket.destroy(); } catch {}; return; }
@@ -158,14 +191,12 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
         intervalMs    : INTERVAL,
       };
 
-      /* commanders get the soldiers too */
       const payload = doc.isCommander
         ? { ...basePayload, soldiers: soldierPEMs, commanders: commanderPEMs }
         : { ...basePayload, commanders: commanderPEMs };
 
       safeWriteAndEnd(socket, payload);
 
-      /* ping backend so UI knows this subject is done */
       const BASE = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
       try {
         await fetch(`${BASE}/api/provision/ping`, {
@@ -179,29 +210,22 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
 
       console.log(`✓ bundle sent to ${doc.fullName}`);
 
-      /* if served everyone and no more resends → close server */
       if (index === queueIds.length && resendQueue.length === 0) {
         console.log('All devices provisioned — shutting TLS server');
-        // small delay to let final socket settle; swallow any late resets
-        setTimeout(() => {
-          stopActiveServer().catch(() => {});
-        }, 50);
+        setTimeout(() => { stopActiveServer().catch(() => {}); }, 50);
       }
     }
   );
 
-  // swallow server-level errors (prevents uncaughtException on ECONNRESET)
   server.on('error', (err) => {
     if (err?.code === 'ECONNRESET') return;
     console.warn('[provision] TLS server error:', err?.message || err);
   });
-  server.on('clientError', (err, socket) => { try { socket?.destroy(); } catch {} });
-  server.on('tlsClientError', (err, socket) => { try { socket?.destroy(); } catch {} });
+  server.on('clientError',  (_err, socket) => { try { socket?.destroy(); } catch {} });
+  server.on('tlsClientError',(_err, socket) => { try { socket?.destroy(); } catch {} });
 
-  // expose singleton so other routes (resend/stop/restart) can use it
   setState({ server, missionId, queueIds, indexRef: () => index, setIndex: v => (index = v), resendQueue, sockets, closing: false });
 
-  // Resolve ONLY when listening, so UI can show "Ready to connect"
   await new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(PORT, () => {
@@ -210,7 +234,6 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
     });
   });
 
-  // return a friendly payload for the UI
   return { ok: true, message: `TLS provision server listening on :${PORT}`, port: PORT };
 }
 
