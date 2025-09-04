@@ -5,34 +5,45 @@ import mongoose from 'mongoose';
 // Use the intermediate pass by default; fall back to root pass or 12345
 const INT_PASS = process.env.CA_INT_PASS || process.env.CA_ROOT_PASS || '12345';
 
+// Default Intermediate CA id (can override via env)
+const DEFAULT_INTER_ID = process.env.INTER_CA_DEFAULT_ID || 'intermediate-ca-2025A';
+
 // cache per id; ':latest' for the newest intermediate
 const cache = new Map();
 
 /**
- * Load an Intermediate CA from Mongo and return { certPem, keyPem }.
- * - If `id` is provided, loads that document (_id) from CA collection.
- * - If omitted, picks the most recent document with { type: 'intermediate' }.
- * 
- * Returns the SAME shape as your original getCA(): { certPem, keyPem }
+ * Load an Intermediate CA and return { certPem, keyPem }.
+ * - If `id` is provided, loads that document (_id).
+ * - If omitted, uses DEFAULT_INTER_ID and, if not found, falls back to the newest {type:'intermediate'}.
  */
-export async function interCaLoader(id = null) {
+export async function interCaLoader(id = DEFAULT_INTER_ID) {
   const cacheKey = id || ':latest';
   if (cache.has(cacheKey)) return cache.get(cacheKey);
 
   await mongoose.connect(process.env.MONGODB_URI);
   const CA = mongoose.connection.db.collection('CA');
 
-  let doc;
+  let doc = null;
+
+  // Try requested (or default) ID first
   if (id) {
     doc = await CA.findOne({ _id: id });
-    if (!doc) throw new Error(`Intermediate CA "${id}" not found`);
-  } else {
-    // newest intermediate (createdAt desc, fallback _id desc)
+  }
+
+  // Fallback to newest intermediate if not found
+  if (!doc) {
     doc = await CA.find({ type: 'intermediate' })
                   .sort({ createdAt: -1, _id: -1 })
                   .limit(1)
                   .next();
-    if (!doc) throw new Error('No intermediate CA found');
+  }
+
+  if (!doc) {
+    throw new Error(
+      id
+        ? `Intermediate CA "${id}" not found and no other intermediate exists`
+        : 'No intermediate CA found'
+    );
   }
 
   const pki = forge.pki;
@@ -50,7 +61,7 @@ export async function interCaLoader(id = null) {
     // PKCS#1 (legacy)
     privateKey = pki.decryptRsaPrivateKey(privPem, INT_PASS);
   } else if (privPem.includes('BEGIN PRIVATE KEY')) {
-    // PKCS#8 unencrypted (rare, but handle)
+    // PKCS#8 unencrypted (rare)
     const pkcs8 = pki.privateKeyInfoFromPem(privPem);
     privateKey  = pki.privateKeyFromAsn1(pkcs8.privateKey);
   } else {
@@ -67,7 +78,7 @@ export async function interCaLoader(id = null) {
   return result;
 }
 
-// Optional helpers if you ever need to invalidate cache:
+// Optional helpers to invalidate cache
 export function clearInterCaCache(id = null) {
   if (id) cache.delete(id);
   else cache.clear();

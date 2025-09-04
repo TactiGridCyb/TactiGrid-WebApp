@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import forge    from 'node-forge';
 import mongoose from 'mongoose';
-import { getCA } from '@/lib/caLoader';
+import { interCaLoader as getCA } from '@/lib/interCaLoader';
 
 // simple header gate; set CA_ADMIN_TOKEN in .env.local
 const ADMIN_HDR = 'x-ca-admin';

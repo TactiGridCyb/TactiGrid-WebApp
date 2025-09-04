@@ -9,7 +9,7 @@ import Log         from '@/models/LogsModel';
 import Mission     from '@/models/MissionModel';
 import RevokedCert from '@/models/RevokedCert';
 import Certificate from '@/models/Certificate'; // ← NEW
-import { getCA }   from '@/lib/caLoader';
+import { interCaLoader as getCA } from '@/lib/interCaLoader';
 
 /* ────────── decrypt helpers ────────── */
 function decryptGMK(b64, caKeyPem) {
