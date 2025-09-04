@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from '../styles/componentsDesign/LogPlayer.module.css';
-import Navbar from './Navbar';
+
 
 /* ---------- tiny helpers ---------- */
 const toMs = (v) => {
