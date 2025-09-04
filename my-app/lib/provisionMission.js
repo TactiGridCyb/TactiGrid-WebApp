@@ -201,7 +201,10 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
       try {
         await fetch(`${BASE}/api/provision/ping`, {
           method : 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-provision': '1', // 👈 optional marker for observability
+          },
           body   : JSON.stringify({ missionId, subjectId }),
         });
       } catch (e) {

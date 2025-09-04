@@ -5,8 +5,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from '../styles/componentsDesign/LogPlayer.module.css';
 
+/* ---------- helpers ---------- */
+const asStr = (x) => (x ?? '').toString();
 
-/* ---------- tiny helpers ---------- */
 const toMs = (v) => {
   if (!v) return 0;
   if (typeof v === 'number') return v;
@@ -15,7 +16,30 @@ const toMs = (v) => {
   if (typeof v === 'object' && '$date' in v) return new Date(v.$date).getTime();
   return 0;
 };
-const slug = (s) => (s ?? '').toString().trim().toLowerCase().replace(/\s+/g, '-');
+
+const eventTs = (e) => toMs(e?.timestamp ?? e?.time ?? e?.time_sent ?? e?.createdAt);
+const normEvent = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const pick = (obj, keys) => keys.map((k) => obj?.[k]).find((v) => v != null);
+
+const isMongoId = (s) => /^[0-9a-f]{24}$/i.test(asStr(s).trim());
+const toIdStr = (x) => {
+  if (!x) return '';
+  if (typeof x === 'string') return x;
+  if (typeof x === 'object') {
+    if (x.$oid) return String(x.$oid);
+    if (x._id) return toIdStr(x._id);
+  }
+  return String(x);
+};
+
+const nameKey = (s) =>
+  asStr(s)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+    .replace(/[-\s]/g, ''); // canonical key from a human name
 
 const fmtClock = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -33,17 +57,25 @@ const agoText = (ms) => {
   return `${h}h ago`;
 };
 
-/* ---------- marker html (CSS-Modules classes only) ---------- */
+/* ---------- HR event helpers ---------- */
+const isHrEvent = (e) => {
+  const n = normEvent(e?.eventName);
+  return n.includes('hr') || n.includes('heart');
+};
+const readHrValue = (e) => {
+  const v = pick(e, ['heartRate', 'hr', 'bpm', 'value', 'rate']);
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+};
+
+/* ---------- marker html ---------- */
 const VARIANT_CLASS = {
-  ok: null, // default
+  ok: null,
   commander: styles.vCommander,
-  low: styles.vLow, // unused by default, but kept for future
-  critical: styles.vCritical,
   compromised: styles.vCompromised,
   missing: styles.vMissing,
   unqualified: styles.vUnqualified,
 };
-
 const markerHtml = (variant, label) => `
   <div class="${styles.dot} ${VARIANT_CLASS[variant] || ''}">
     <div class="${styles.dotCore}"></div>
@@ -52,14 +84,42 @@ const markerHtml = (variant, label) => `
     <div class="${styles.dotLabel}">${label ?? ''}</div>
   </div>
 `;
-
 const divIcon = (variant, label) =>
   L.divIcon({
-    className: '',              // keep empty so only our module classes apply
+    className: '',
     html: markerHtml(variant, label),
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
+
+/* ---------- event icon/label ---------- */
+const eventMeta = (e) => {
+  const n = normEvent(e?.eventName);
+  if (isHrEvent(e)) return { icon: '💓', label: 'Heart rate' };
+  switch (n) {
+    case 'commanderswitch':
+      return { icon: '🎖', label: 'Commander switch' };
+    case 'unqualifiedcommander':
+      return { icon: '🚫', label: 'Unqualified commander' };
+    case 'missingsoldier':
+      return { icon: '❓', label: 'Missing soldier' };
+    case 'compromisedsoldier':
+      return { icon: '⚠️', label: 'Compromised soldier' };
+    default:
+      return { icon: '⚡', label: asStr(e?.eventName || 'Event') };
+  }
+};
+
+/* ---------- names & identity ---------- */
+const buildBaseNameMap = (namesObj) => {
+  const m = new Map();
+  for (const [k, v] of Object.entries(namesObj || {})) {
+    const key = nameKey(v || k);
+    m.set(key, v || k);
+    m.set(`__token__:${k}`, v || k);
+  }
+  return m;
+};
 
 export default function LogPlayer({ log, mission, names = {} }) {
   if (!log) return null;
@@ -68,13 +128,6 @@ export default function LogPlayer({ log, mission, names = {} }) {
   const Data = Array.isArray(log.Data) ? log.Data : [];
   const Events = Array.isArray(log.Events) ? log.Events : [];
 
-  /* display names */
-  const displayName = useMemo(() => {
-    const map = new Map(Object.entries(names || {}).map(([k, v]) => [slug(k), v]));
-    return (id) => map.get(slug(id)) ?? String(id);
-  }, [names]);
-
-  /* timeline */
   const sortedData = useMemo(
     () => [...Data].sort((a, b) => toMs(a.time_sent) - toMs(b.time_sent)),
     [Data]
@@ -84,27 +137,102 @@ export default function LogPlayer({ log, mission, names = {} }) {
   const durationMs = Math.max(endMs - startMs, 0);
 
   const sortedEvents = useMemo(
-    () => [...Events].sort((a, b) => toMs(a.timestamp) - toMs(b.timestamp)),
+    () => [...Events].sort((a, b) => eventTs(a) - eventTs(b)),
     [Events]
   );
 
-  /* UI */
+  /* base names from props + fetched names for ObjectIds */
+  const baseNameMap = useMemo(() => buildBaseNameMap(names), [names]);
+  const [fetchedNames, setFetchedNames] = useState(() => new Map());
+
+  /* gather all tokens we might need names for (ObjectIds only) */
+  const idsToResolve = useMemo(() => {
+    const set = new Set();
+    const commanders = (mission?.Commanders ?? mission?.commanders ?? []).map(toIdStr);
+    commanders.forEach((c) => isMongoId(c) && set.add(c));
+    for (const row of sortedData) {
+      const sid = toIdStr(row?.soldierId);
+      if (isMongoId(sid)) set.add(sid);
+    }
+    // only ID-like fields from events; name fields (newCommanderID/missingID/compromisedID) are names, not IDs
+    for (const e of sortedEvents) {
+      const idish = pick(e, ['soldierID', 'soldierId', 'subjectID', 'subjectId', 'id']);
+      const v = toIdStr(idish);
+      if (isMongoId(v)) set.add(v);
+    }
+    return Array.from(set);
+  }, [mission, sortedData, sortedEvents]);
+
+  /* fetch names for unknown ObjectIds */
+  useEffect(() => {
+    const unknown = idsToResolve.filter((id) => !fetchedNames.has(id));
+    if (!unknown.length) return;
+
+    let cancelled = false;
+    (async () => {
+      const pairs = await Promise.all(
+        unknown.map(async (id) => {
+          try {
+            const res = await fetch(`/api/soldiers/${id}`);
+            if (!res.ok) throw 0;
+            const json = await res.json();
+            return [id, json?.fullName || id];
+          } catch {
+            return [id, id];
+          }
+        })
+      );
+      if (!cancelled) {
+        setFetchedNames((prev) => {
+          const next = new Map(prev);
+          for (const [id, name] of pairs) next.set(id, name);
+          return next;
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [idsToResolve, fetchedNames]);
+
+  /* resolve a token (ObjectId/IDF_ID/name) to a display name */
+  const displayName = useCallback(
+    (token) => {
+      const t = asStr(token);
+      const byToken = baseNameMap.get(`__token__:${t}`);
+      if (byToken) return byToken;
+      if (isMongoId(t) && fetchedNames.has(t)) return fetchedNames.get(t);
+      return t; // name/string as-is
+    },
+    [baseNameMap, fetchedNames]
+  );
+
+  /* canonical person key:
+     - for IDs → use resolved name
+     - for names → use the name directly
+  */
+  const keyFromIdToken = useCallback((token) => nameKey(displayName(token)), [displayName]);
+  const keyFromName = useCallback((fullName) => nameKey(fullName), []);
+
+  /* UI state */
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
 
-  /* map setup */
+  /* Map setup (panes to keep events above markers) */
   const mapRef = useRef(null);
-  const layerRef = useRef(L.layerGroup());
+  const markersLayerRef = useRef(L.layerGroup());
+  const eventsLayerRef = useRef(L.layerGroup());
 
   useEffect(() => {
     if (mapRef.current || !sortedData.length) return;
     const first = sortedData[0];
 
-    const map = L.map('log-map', {
-      zoomControl: false,
-      attributionControl: false,
-    }).setView([first.latitude, first.longitude], 15);
+    const map = L.map('log-map', { zoomControl: false, attributionControl: false }).setView(
+      [first.latitude, first.longitude],
+      15
+    );
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -112,7 +240,14 @@ export default function LogPlayer({ log, mission, names = {} }) {
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(map);
 
-    layerRef.current.addTo(map);
+    map.createPane('markersPane');
+    map.createPane('eventsPane');
+    map.getPane('markersPane').style.zIndex = 600;
+    map.getPane('eventsPane').style.zIndex = 700;
+
+    markersLayerRef.current.addTo(map);
+    eventsLayerRef.current.addTo(map);
+
     mapRef.current = map;
 
     return () => {
@@ -123,98 +258,114 @@ export default function LogPlayer({ log, mission, names = {} }) {
     };
   }, [sortedData]);
 
-  /* compute commander/missing/compromised/unqualified at time */
+  /* Event-driven state at now (MATCH BY NAME for commander/missing/compromised;
+     HR comes only from events and is stored by canonical key) */
   const stateAt = useCallback(
     (nowMs) => {
       const missing = new Set();
       const compromised = new Set();
       const unqualified = new Set();
       const cutOff = new Map();
+      const hrMap = new Map(); // key -> last HR value up to now
 
-      const commanders = mission?.Commanders ?? mission?.commanders ?? [];
-      // ✅ show first commander from the very start
-      let commander = commanders.length ? slug(commanders[0]) : null;
+      // initial commander can be ID or NAME
+      const initialCmdrs = mission?.Commanders ?? mission?.commanders ?? [];
+      let commander = null;
+      if (initialCmdrs.length) {
+        const c0 = initialCmdrs[0];
+        commander = isMongoId(c0) ? keyFromIdToken(toIdStr(c0)) : keyFromName(asStr(c0));
+      }
 
       for (const e of sortedEvents) {
-        const ts = toMs(e.timestamp);
+        const ts = eventTs(e);
         if (ts > nowMs) break;
 
-        switch (e.eventName) {
-          case 'commanderSwitch':
-            if (e.newCommanderID) commander = slug(e.newCommanderID);
-            break;
+        const ev = normEvent(e.eventName);
 
-          case 'missingSoldier': {
-            const id = e.missingID ? slug(e.missingID) : null;
-            if (id) {
-              missing.add(id);
-              cutOff.set(id, ts);
-            }
-            break;
+        if (ev === 'commanderswitch') {
+          // 🔑 name string in newCommanderID
+          const nameStr = asStr(pick(e, ['newCommanderID', 'newCommander'])).trim();
+          if (nameStr) commander = keyFromName(nameStr);
+          continue;
+        }
+
+        if (ev === 'missingsoldier') {
+          const nameStr = asStr(pick(e, ['missingID', 'missingName'])).trim();
+          if (nameStr) {
+            const k = keyFromName(nameStr);
+            missing.add(k);
+            cutOff.set(k, ts);
           }
+          continue;
+        }
 
-          case 'compromisedSoldier': {
-            const id = e.compromisedID ? slug(e.compromisedID) : null;
-            if (id) {
-              compromised.add(id);
-              cutOff.set(id, ts);
-            }
-            break;
+        if (ev === 'compromisedsoldier') {
+          const nameStr = asStr(pick(e, ['compromisedID', 'compromisedName'])).trim();
+          if (nameStr) {
+            const k = keyFromName(nameStr);
+            compromised.add(k);
+            cutOff.set(k, ts);
           }
+          continue;
+        }
 
-          // 🟡 new event
-          case 'UnqualifiedCommander': {
-            const id =
-              (e.unqualifiedID && slug(e.unqualifiedID)) ||
-              (e.soldierID && slug(e.soldierID)) ||
-              (e.id && slug(e.id)) ||
-              null;
-            if (id) unqualified.add(id);
-            break;
-          }
+        if (ev === 'unqualifiedcommander') {
+          const nameStr = asStr(pick(e, ['unqualifiedID', 'unqualifiedName'])).trim();
+          if (nameStr) unqualified.add(keyFromName(nameStr));
+          continue;
+        }
 
-          default:
-            break;
+        // 💓 HR event: subject name preferred; fall back to id if provided
+        if (isHrEvent(e)) {
+          const subjName =
+            asStr(pick(e, ['soldierName', 'subjectName', 'name'])).trim() || null;
+          const subjId = toIdStr(pick(e, ['soldierID', 'soldierId', 'subjectID', 'subjectId', 'id']));
+          const key = subjName ? keyFromName(subjName) : subjId ? keyFromIdToken(subjId) : null;
+          const val = readHrValue(e);
+          if (key && val != null) hrMap.set(key, val);
         }
       }
-      return { commander, missing, compromised, unqualified, cutOff };
+      return { commander, missing, compromised, unqualified, cutOff, hrMap };
     },
-    [mission, sortedEvents]
+    [mission, sortedEvents, keyFromIdToken, keyFromName]
   );
 
-  /* derived roster at current time (no setState) */
+  /* Roster at now */
   const nowMs = startMs + t;
+  const latestRef = useRef(new Map());
 
   const roster = useMemo(() => {
-    const { commander, missing, compromised, unqualified, cutOff } = stateAt(nowMs);
+    const { commander, missing, compromised, unqualified, cutOff, hrMap } = stateAt(nowMs);
 
-    // latest row per soldier up to now
     const latest = new Map();
     for (const row of sortedData) {
       const ts = toMs(row.time_sent);
       if (ts > nowMs) break;
-      const id = slug(row.soldierId);
-      if (cutOff.has(id) && ts > cutOff.get(id)) continue; // ignore after cut-off
-      latest.set(id, row);
+      const key = keyFromIdToken(toIdStr(row.soldierId)); // soldierId is ObjectId → resolve to name
+      if (cutOff.has(key) && ts > cutOff.get(key)) continue;
+      latest.set(key, row);
     }
+    latestRef.current = latest;
 
     const list = [];
-    latest.forEach((row, id) => {
-      const { latitude, longitude, heartRate } = row;
+    latest.forEach((row, key) => {
+      const { latitude, longitude } = row;
       const ts = toMs(row.time_sent);
       const age = nowMs - ts;
 
       let status = 'ok';
-      if (id === commander) status = 'commander';
-      else if (compromised.has(id)) status = 'compromised';
-      else if (missing.has(id)) status = 'missing';
-      else if (unqualified.has(id)) status = 'unqualified';
-      else if (heartRate > 160 || heartRate < 60) status = 'critical'; // 🔴 HR rule
+      if (key === commander) status = 'commander';
+      else if (compromised.has(key)) status = 'compromised';
+      else if (missing.has(key)) status = 'missing';
+      else if (unqualified.has(key)) status = 'unqualified';
+
+      const name = displayName(toIdStr(row.soldierId));
+      const hr = hrMap.has(key) ? hrMap.get(key) : null; // HR strictly from events
 
       list.push({
-        id,
-        name: displayName(id),
-        hr: heartRate,
+        id: key,
+        name,
+        hr,
         status,
         lastUpdateMs: age,
         lat: latitude,
@@ -222,72 +373,104 @@ export default function LogPlayer({ log, mission, names = {} }) {
       });
     });
 
-    // priority: commander > critical > compromised > missing > unqualified > ok
-    const weight = {
-      commander: 0,
-      critical: 1,
-      compromised: 2,
-      missing: 3,
-      unqualified: 4,
-      ok: 5,
-    };
-    list.sort(
-      (a, b) => (weight[a.status] - weight[b.status]) || a.name.localeCompare(b.name)
-    );
-
+    const weight = { commander: 0, compromised: 1, missing: 2, unqualified: 3, ok: 4 };
+    list.sort((a, b) => weight[a.status] - weight[b.status] || a.name.localeCompare(b.name));
     return list;
-  }, [sortedData, displayName, stateAt, nowMs]);
+  }, [sortedData, displayName, stateAt, nowMs, keyFromIdToken]);
 
-  /* draw markers each frame (no setState) */
+  /* Draw markers + events up to now */
   useEffect(() => {
     if (!mapRef.current) return;
-    layerRef.current.clearLayers();
 
-    // soldiers
+    markersLayerRef.current.clearLayers();
+    eventsLayerRef.current.clearLayers();
+
+    // markers
     for (const s of roster) {
       const label = s.name?.[0]?.toUpperCase() ?? '';
       const icon = divIcon(s.status, label);
 
-      L.marker([s.lat, s.lng], { icon })
-        .bindTooltip(`${s.name} • HR ${s.hr}`, {
+      L.marker([s.lat, s.lng], { icon, pane: 'markersPane' })
+        .bindTooltip(`${s.name} • HR ${s.hr ?? '—'}`, {
           permanent: true,
           direction: 'top',
-          className: styles.tip, // local tooltip class
+          className: styles.tip,
         })
-        .addTo(layerRef.current);
+        .addTo(markersLayerRef.current);
     }
 
-    // generic ⚡ events up to now (skip the typed ones we already visualize)
-    const any = roster[0];
-    if (any) {
-      for (const e of sortedEvents) {
-        const ts = toMs(e.timestamp);
-        if (ts > nowMs) break;
-        if (
-          e.eventName === 'commanderSwitch' ||
-          e.eventName === 'missingSoldier' ||
-          e.eventName === 'compromisedSoldier' ||
-          e.eventName === 'UnqualifiedCommander'
-        )
-          continue;
+    // events (strictly by time)
+    const first = sortedData[0];
+    for (const e of sortedEvents) {
+      const ts = eventTs(e);
+      if (ts > nowMs) break;
 
-        L.marker([any.lat, any.lng], {
-          icon: L.divIcon({
-            className: styles.eventIcon,
-            html: '⚡',
-            iconSize: [26, 26],
-            iconAnchor: [13, 13],
-          }),
-        })
-          .bindTooltip(`${e.eventName} @ ${new Date(ts).toLocaleTimeString()}`, {
-            className: styles.tip,
-          })
-          .addTo(layerRef.current);
+      // Subject is NAME for commander/missing/compromised; HR prefers name, may fall back to id
+      let subjectName =
+        e.eventName === 'commanderSwitch'
+          ? asStr(pick(e, ['newCommanderID', 'newCommander'])).trim()
+          : e.eventName === 'missingSoldier'
+          ? asStr(pick(e, ['missingID', 'missingName'])).trim()
+          : e.eventName === 'compromisedSoldier'
+          ? asStr(pick(e, ['compromisedID', 'compromisedName'])).trim()
+          : isHrEvent(e)
+          ? asStr(pick(e, ['soldierName', 'subjectName', 'name'])).trim()
+          : '';
+
+      const subjectId = toIdStr(pick(e, ['soldierID', 'soldierId', 'subjectID', 'subjectId', 'id']));
+
+      let evLat = e.latitude;
+      let evLng = e.longitude;
+
+      // try subject's last known location
+      if ((evLat == null || evLng == null) && (subjectName || subjectId)) {
+        const key =
+          subjectName ? keyFromName(subjectName) : isMongoId(subjectId) ? keyFromIdToken(subjectId) : null;
+        if (key) {
+          const row = latestRef.current.get(key);
+          if (row) {
+            evLat = row.latitude;
+            evLng = row.longitude;
+          }
+        }
       }
-    }
-  }, [roster, sortedEvents, nowMs]);
 
-  /* playback loop */
+      // fallbacks: map center, then first sample
+      if (evLat == null || evLng == null) {
+        const c = mapRef.current.getCenter?.();
+        if (c) {
+          evLat = c.lat;
+          evLng = c.lng;
+        } else if (first) {
+          evLat = first.latitude;
+          evLng = first.longitude;
+        } else continue;
+      }
+
+      const { icon, label } = eventMeta(e);
+      const who =
+        subjectName ||
+        (isMongoId(subjectId) ? displayName(subjectId) : asStr(subjectId).trim()) ||
+        '';
+      const hrPart = isHrEvent(e) ? ` ${readHrValue(e) ?? ''}` : '';
+      const tip = `${label}${hrPart}${who ? ' • ' + who : ''} @ ${new Date(ts).toLocaleTimeString()}`;
+
+      L.marker([evLat, evLng], {
+        pane: 'eventsPane',
+        zIndexOffset: 10000,
+        icon: L.divIcon({
+          className: styles.eventIcon,
+          html: icon,
+          iconSize: [26, 26],
+          iconAnchor: [13, 13],
+        }),
+      })
+        .bindTooltip(tip, { className: styles.tip })
+        .addTo(eventsLayerRef.current);
+    }
+  }, [roster, sortedEvents, nowMs, displayName, keyFromIdToken, keyFromName, sortedData]);
+
+  /* Playback loop */
   useEffect(() => {
     if (!playing) return;
     let raf;
@@ -307,12 +490,7 @@ export default function LogPlayer({ log, mission, names = {} }) {
   };
 
   return (
-    
-
-
     <div className={styles.shell}>
-      
-
       {/* top bar */}
       <div className={styles.topbar}>
         <div className={styles.status}>
@@ -334,10 +512,7 @@ export default function LogPlayer({ log, mission, names = {} }) {
             ⏮
           </button>
 
-          <button
-            className={`${styles.btn} ${styles.btnPrimary}`}
-            onClick={() => setPlaying((p) => !p)}
-          >
+          <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={() => setPlaying((p) => !p)}>
             {playing ? 'Pause' : 'Play'}
           </button>
 
@@ -363,14 +538,13 @@ export default function LogPlayer({ log, mission, names = {} }) {
             </select>
           </label>
 
-          <div className={styles.time}>
-            {fmtClock(t)} / {fmtClock(durationMs)}
-          </div>
+          <div className={styles.time}>{fmtClock(t)} / {fmtClock(durationMs)}</div>
         </div>
       </div>
-            <br />
-            
-      {/* main grid: map + roster */}
+
+      <br />
+
+      {/* main grid */}
       <div className={styles.grid}>
         <div id="log-map" className={styles.map} />
 
@@ -388,23 +562,22 @@ export default function LogPlayer({ log, mission, names = {} }) {
                     {s.name?.[0]?.toUpperCase()}
                   </div>
                   <div>
-                    <div className={styles.cardTitle}>{s.name}</div>
+                    <div className={styles.cardTitle}>
+                      {s.name}{' '}
+                      {s.status === 'commander' && (
+                        <span className={`${styles.chip} ${styles['chip--commander']}`}>COMMANDER</span>
+                      )}
+                    </div>
                     <div className={styles.cardMeta}>
-                      <span className={`${styles.chip} ${styles['chip--' + s.status]}`}>
-                        {s.status === 'ok'
-                          ? 'OK'
-                          : s.status === 'critical'
-                          ? 'CRITICAL HR'
-                          : s.status}
-                      </span>
-                      <span className={styles.dotSep} />
-                      <span
-                        className={
-                          s.hr > 160 || s.hr < 60 ? styles.hrLow : styles.hrGood
-                        }
-                      >
-                        HR {s.hr}
-                      </span>
+                      {s.status !== 'commander' && (
+                        <>
+                          <span className={`${styles.chip} ${styles['chip--' + s.status]}`}>
+                            {s.status === 'ok' ? 'OK' : s.status}
+                          </span>
+                          <span className={styles.dotSep} />
+                        </>
+                      )}
+                      <span className={styles.hr}>HR {s.hr ?? '—'}</span>
                       <span className={styles.dotSep} />
                       <span className={styles.muted}>{agoText(s.lastUpdateMs)}</span>
                     </div>
@@ -437,24 +610,13 @@ export default function LogPlayer({ log, mission, names = {} }) {
 
       {/* legend */}
       <div className={styles.legend}>
-        <span className={styles.legendItem}>
-          <span className={`${styles.legendDot} ${styles.ldCommander}`} /> Commander
-        </span>
-        <span className={styles.legendItem}>
-          <span className={`${styles.legendDot} ${styles.ldOk}`} /> Soldier
-        </span>
-        <span className={styles.legendItem}>
-          <span className={`${styles.legendDot} ${styles.ldCritical}`} /> Critical HR
-        </span>
-        <span className={styles.legendItem}>
-          <span className={`${styles.legendDot} ${styles.ldComp}`} /> Compromised
-        </span>
-        <span className={styles.legendItem}>
-          <span className={`${styles.legendDot} ${styles.ldMiss}`} /> Missing
-        </span>
-        <span className={styles.legendItem}>
-          <span className={`${styles.legendDot} ${styles.ldUnqualified}`} /> Unqualified Cmdr
-        </span>
+        <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.ldCommander}`} /> Commander</span>
+        <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.ldOk}`} /> Soldier</span>
+        <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.ldComp}`} /> Compromised</span>
+        <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.ldMiss}`} /> Missing</span>
+        <span className={styles.legendItem}><span className={`${styles.legendDot} ${styles.ldUnqualified}`} /> Unqualified Cmdr</span>
+        <span className={styles.legendItem}><span className={styles.eventDot}>💓</span> HR Event</span>
+        <span className={styles.legendItem}><span className={styles.eventDot}>🎖</span> Commander Switch</span>
       </div>
     </div>
   );

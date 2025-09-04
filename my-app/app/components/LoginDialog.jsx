@@ -1,9 +1,10 @@
 "use client";
-import { useState } from 'react';
-import cls from '../styles/componentsDesign/LoginDialog.module.css';
-
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import cls from "../styles/componentsDesign/LoginDialog.module.css";
 
 export default function LoginDialog({ onClose, onSuccess }) {
+  const router = useRouter();
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [error, setError]       = useState("");
@@ -15,6 +16,7 @@ export default function LoginDialog({ onClose, onSuccess }) {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include", // make sure auth cookie is set
       body: JSON.stringify({ email, password }),
     });
 
@@ -24,18 +26,26 @@ export default function LoginDialog({ onClose, onSuccess }) {
       return;
     }
 
-    onSuccess?.(data.user);  // notify parent
-    onClose();               // close dialog
+    onSuccess?.(data.user); // notify parent
+    onClose();              // close dialog UI
+
+    // Re-render the current route so middleware + server fetches run with the new cookie
+    setTimeout(() => router.refresh(), 0);
   }
 
   return (
-    <div className={cls.overlay} >
+    <div
+      className={cls.overlay}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-title"
+    >
       <div className={cls.card} onClick={(e) => e.stopPropagation()}>
-        <button className={cls.closeBtn} onClick={onClose}>
+        <button className={cls.closeBtn} onClick={onClose} aria-label="Close">
           &times;
         </button>
 
-        <h2 className={cls.cardTitle}>Sign in</h2>
+        <h2 id="login-title" className={cls.cardTitle}>Sign&nbsp;in</h2>
 
         {error && <p className={cls.errorMsg}>{error}</p>}
 
@@ -65,7 +75,7 @@ export default function LoginDialog({ onClose, onSuccess }) {
           </div>
 
           <button type="submit" className={cls.submitBtn}>
-            Log in
+            Log&nbsp;in
           </button>
         </form>
       </div>

@@ -20,6 +20,7 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
         const res = await fetch('/api/soldiers/names', {
           method : 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include', // ← ensure cookie rides along
           body   : JSON.stringify({ ids }),
         });
         if (!res.ok) throw new Error(`names fetch failed ${res.status}`);
@@ -43,6 +44,9 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
         setDone(d => [...new Set([...d, String(subjectId)])]);
       } catch {}
     };
+    es.onerror = () => {
+      // Let EventSource handle retries; could set a UI hint if you want
+    };
     return () => es.close();
   }, [missionId]);
 
@@ -57,6 +61,7 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
       const res = await fetch('/api/provision/start', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body   : JSON.stringify({ missionId, soldiers, commanders }),
       });
       const data = await res.json().catch(() => ({}));
@@ -73,7 +78,7 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
 
   async function stop() {
     setErr('');
-    await fetch('/api/provision/stop', { method: 'POST' }).catch(() => {});
+    await fetch('/api/provision/stop', { method: 'POST', credentials: 'include' }).catch(() => {});
     setStatus('stopped');
   }
 
@@ -83,6 +88,7 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
     const res = await fetch('/api/provision/restart', {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body   : JSON.stringify({ missionId, soldiers, commanders }),
     });
     const data = await res.json().catch(() => ({}));
@@ -104,6 +110,7 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
       const res = await fetch('/api/provision/resend', {
         method : 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body   : JSON.stringify({ missionId, subjectId }),
       });
       if (!res.ok) {

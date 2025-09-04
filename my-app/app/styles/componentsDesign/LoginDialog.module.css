@@ -1,108 +1,201 @@
-/* ---------- overlay ---------- */
+/* styles/componentsDesign/LoginDialog.module.css */
+
+/* ===== Overlay ===== */
 .overlay {
   position: fixed;
   inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.55);
   z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(10, 12, 16, 0.55);
+  /* beautiful blur behind the modal */
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  animation: overlayIn 220ms ease-out;
 }
 
-/* ---------- card ---------- */
+/* ===== Card (Glassy) ===== */
 .card {
-  background: #ffffff;
-  border-radius: 10px;
-  width: 100%;
-  max-width: 460px;
-  padding: 2.5rem 2rem 2rem;
   position: relative;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
-  font-family: system-ui, sans-serif;
-  color: #1f2937;           /* gray‑800 */
+  width: 100%;
+  max-width: 420px;
+  border-radius: 20px;
+  padding: 28px 24px 24px;
+  color: #0d0f14;
+  background:
+    radial-gradient(120% 120% at 10% 0%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.18)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.14));
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: popIn 240ms cubic-bezier(.2, .8, .2, 1);
 }
 
-/* ---------- close “×” ---------- */
+/* subtle glass sheen */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(120deg, rgba(255,255,255,0.36), rgba(255,255,255,0) 35%),
+    radial-gradient(100% 60% at 100% 0%, rgba(124, 92, 255, 0.18), rgba(124, 92, 255, 0) 60%),
+    radial-gradient(100% 60% at 0% 100%, rgba(0, 180, 255, 0.15), rgba(0, 180, 255, 0) 60%);
+  pointer-events: none;
+}
+
+/* ===== Close Button ===== */
 .closeBtn {
   position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  background: transparent;
-  border: none;
-  font-size: 2rem;
+  top: 10px;
+  right: 10px;
+  height: 36px;
+  width: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(13, 15, 20, 0.1);
+  background: rgba(255, 255, 255, 0.55);
+  color: #0d0f14;
+  font-size: 20px;
   line-height: 1;
-  color: #6b7280;           /* gray‑500 */
+  display: grid;
+  place-items: center;
   cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+.closeBtn:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.75);
+}
+.closeBtn:focus-visible {
+  outline: 2px solid rgba(124, 92, 255, 0.6);
+  outline-offset: 2px;
 }
 
-.closeBtn:hover { color: #111827; }          /* gray‑900 */
-
-/* ---------- title ---------- */
+/* ===== Title ===== */
 .cardTitle {
-  margin: 0 0 1.5rem;
-  font-size: 1.75rem;
-  font-weight: 600;
-  text-align: center;
+  margin: 8px 0 18px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: #0d0f14;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.35);
 }
 
-/* ---------- error message ---------- */
+/* ===== Error Message ===== */
 .errorMsg {
-  margin-bottom: 1rem;
-  color: #ef4444;           /* red‑500 */
-  font-size: 0.9rem;
-  text-align: center;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  color: #7a0c0c;
+  font-size: 14px;
 }
 
-/* ---------- form ---------- */
-.form { display: flex; flex-direction: column; gap: 1.25rem; }
+/* ===== Form Layout ===== */
+.form {
+  display: grid;
+  gap: 16px;
+}
 
-.formGroup { display: flex; flex-direction: column; }
-
+/* ===== Form Groups ===== */
+.formGroup {
+  display: grid;
+  gap: 8px;
+}
 .formGroup label {
-  margin-bottom: 0.4rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #374151;           /* gray‑700 */
-}
-
-.formGroup input {
-  padding: 0.55rem 0.75rem;
-  font-size: 1rem;
-  border: 1px solid #d1d5db;     /* gray‑300 */
-  border-radius: 6px;
-  background: #f9fafb;           /* gray‑50 */
-  color: #111827;                /* gray‑900 */
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.formGroup input:focus {
-  border-color: #3b82f6;         /* blue‑500 */
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
-}
-
-/* ---------- submit ---------- */
-.submitBtn {
-  margin-top: 0.5rem;
-  padding: 0.65rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
+  font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
-  background: #3b82f6;           /* blue‑500 */
-  color: #fff;
-  transition: background 0.2s;
+  color: rgba(13, 15, 20, 0.85);
 }
 
-.submitBtn:hover { background: #2563eb; }    /* blue‑600 */
+/* Inputs: glassy fields */
+.formGroup input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(13, 15, 20, 0.12);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    0 1px 0 rgba(255,255,255,0.4);
+  color: #0d0f14;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease, transform 120ms ease;
+}
+.formGroup input::placeholder {
+  color: rgba(13, 15, 20, 0.45);
+}
+.formGroup input:hover {
+  background: rgba(255, 255, 255, 0.85);
+}
+.formGroup input:focus {
+  outline: none;
+  border-color: rgba(124, 92, 255, 0.6);
+  box-shadow:
+    0 0 0 4px rgba(124, 92, 255, 0.18),
+    inset 0 1px 0 rgba(255,255,255,0.6);
+  transform: translateY(-1px);
+}
 
+/* ===== Submit Button ===== */
+.submitBtn {
+  margin-top: 6px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: white;
+  background:
+    linear-gradient(180deg, var(--accent, #7c5cff), var(--accent-2, #5b3df1));
+  box-shadow:
+    0 12px 30px rgba(124, 92, 255, 0.35),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+.submitBtn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 16px 36px rgba(124, 92, 255, 0.45),
+    inset 0 1px 0 rgba(255,255,255,0.35);
+  filter: saturate(110%);
+}
+.submitBtn:active {
+  transform: translateY(0);
+}
+.submitBtn:focus-visible {
+  outline: 2px solid rgba(124, 92, 255, 0.6);
+  outline-offset: 3px;
+}
 .submitBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* ---------- responsive ---------- */
-@media (max-width: 480px) {
-  .card { padding: 2rem 1.5rem; }
+/* ===== Animations ===== */
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* motion safety */
+@media (prefers-reduced-motion: reduce) {
+  .overlay, .card, .closeBtn, .formGroup input, .submitBtn { animation: none !important; transition: none !important; }
 }

@@ -4,7 +4,8 @@ import Soldier   from '@/models/Soldier';
 
 export async function GET(req, { params }) {
   await dbConnect();
-  const soldier = await Soldier.findById(params.id, { fullName: 1 }).lean();
+  const ParamStore = await params;
+  const soldier = await Soldier.findById(ParamStore.id, { fullName: 1 }).lean();
   if (!soldier)
     return NextResponse.json({ error: 'not-found' }, { status: 404 });
   return NextResponse.json(soldier);

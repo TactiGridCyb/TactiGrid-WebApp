@@ -28,6 +28,13 @@ async function isAuthed(req) {
   }
 }
 
+// ✅ Specifically allow the internal POST /api/provision/ping coming from server-side code
+function isInternalProvisionPing(pathname, method, req) {
+  if (!(method === "POST" && pathname === "/api/provision/ping")) return false;
+  // Node/server fetches don't send sec-fetch-site → treat as internal
+  return isServerSideFetch(req);
+}
+
 export async function middleware(req) {
   const { pathname, searchParams } = req.nextUrl;
 
@@ -58,6 +65,11 @@ export async function middleware(req) {
       return NextResponse.next();
     }
 
+    // ✅ Allow internal server-side POST to /api/provision/ping (progress signal)
+    if (isInternalProvisionPing(pathname, req.method, req)) {
+      return NextResponse.next();
+    }
+
     // Everything else requires user auth
     if (!authed) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -76,8 +88,7 @@ export async function middleware(req) {
       const url = req.nextUrl.clone();
       url.pathname = "/unconnected";
       const q = searchParams.toString();
-      url.searchParams.set("next", pathname + (q ? `?${q}` : ""));
-      // change URL to /unconnected; use rewrite(url) if you prefer keeping original
+      url.searchParams.set("next", pathname + (q ? `?${q}` : "")); // preserve query
       return NextResponse.redirect(url);
     }
   }
