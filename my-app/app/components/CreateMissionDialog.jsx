@@ -199,13 +199,25 @@ export default function CreateMissionDialog({ isOpen, onClose }) {
             )}
 
             {step === 1 && (
-              <div className="cmd-field">
-                <label className="cmd-label" htmlFor="StartTime">Start Time</label>
-                <input id="StartTime" type="datetime-local" className="cmd-input"
-                  {...register("StartTime", { required: "Pick a start time" })} />
-                {errors.StartTime && <span className="cmd-error">{errors.StartTime.message}</span>}
-              </div>
-            )}
+  <div className="cmd-field">
+    <label className="cmd-label" htmlFor="StartTime">Start Time</label>
+    <input
+      id="StartTime"
+      type="datetime-local"
+      className="cmd-input"
+      /* prevent past times */
+      min={new Date().toISOString().slice(0, 16)}
+      {...register("StartTime", {
+        required: "Pick a start time",
+        validate: (v) => {
+          const dt = new Date(v);
+          return dt.getTime() >= Date.now() || "Start time must be in the future";
+        },
+      })}
+    />
+    {errors.StartTime && <span className="cmd-error">{errors.StartTime.message}</span>}
+  </div>
+)}
 
             {step === 2 && (
               <div className="cmd-field">
