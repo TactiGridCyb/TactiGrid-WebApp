@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog } from "@headlessui/react";
 import { useForm, useWatch } from "react-hook-form";
-
+import ConfigPicker from './ConfigPicker';
 import MapPicker from "./MapPicker";
 import PersonPicker from "./PersonPicker";
 
@@ -263,37 +263,37 @@ export default function CreateMissionDialog({ isOpen, onClose }) {
             )}
 
             {step === 6 && (
-              <div className="cmd-field">
-                <label className="cmd-label" htmlFor="Configuration">Pick Configuration</label>
+  <div className="cmd-field">
+    <label className="cmd-label" htmlFor="Configuration">Pick Configuration</label>
 
-                {cfgErr && (
-                  <div className="cmd-error" style={{ marginBottom: 6 }}>
-                    Failed to load configurations. {String(cfgErr.message || cfgErr)}
-                  </div>
-                )}
+    {/* Optional legacy error display; ConfigPicker fetches internally */}
+    {cfgErr && (
+      <div className="cmd-error" style={{ marginBottom: 6 }}>
+        Failed to load configurations. {String(cfgErr?.message || cfgErr)}
+      </div>
+    )}
 
-                <select
-                  id="Configuration"
-                  className="cmd-input"
-                  disabled={cfgLoading}
-                  {...register("Configuration", {
-                    required: "Select a configuration",
-                    validate: (v) => isObjectId(v) || "Invalid selection",
-                  })}
-                  value={watch("Configuration") || ""}
-                  onChange={(e) => setValue("Configuration", e.target.value, { shouldValidate: true })}
-                >
-                  <option value="" disabled>{cfgLoading ? "Loading…" : "— Select —"}</option>
-                  {configs.map((c) => (
-                    <option key={String(c._id)} value={String(c._id)}>
-                      {c.name || c.title || c.label || c.configName || c._id}
-                    </option>
-                  ))}
-                </select>
+    {/* Fancy card picker (shows GMK/FHF function names, interval, etc.) */}
+    <ConfigPicker
+      value={watch('Configuration') || ''}
+      onChange={(id) => setValue('Configuration', id, { shouldValidate: true })}
+    />
 
-                {errors.Configuration && <span className="cmd-error">{errors.Configuration.message}</span>}
-              </div>
-            )}
+    {/* Keep RHF validation exactly as before */}
+    <input
+      type="hidden"
+      id="Configuration"
+      {...register('Configuration', {
+        required: 'Select a configuration',
+        validate: (v) => isObjectId(v) || 'Invalid selection',
+      })}
+    />
+
+    {errors.Configuration && (
+      <span className="cmd-error">{errors.Configuration.message}</span>
+    )}
+  </div>
+)}
 
             <div className="cmd-nav">
               <button type="button" className="cmd-btn" onClick={prev} disabled={step === 0 || isSubmitting}>◀ Back</button>
