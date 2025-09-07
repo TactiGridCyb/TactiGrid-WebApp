@@ -8,7 +8,6 @@ export async function GET(req) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
-      /* stash controller by missionId so /ping can write to it */
       globalThis.__provisionStreams ??= new Map();
       globalThis.__provisionStreams.set(missionId, controller);
     },

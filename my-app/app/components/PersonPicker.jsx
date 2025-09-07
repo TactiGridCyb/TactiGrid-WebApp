@@ -2,9 +2,9 @@
 
 import PropTypes from "prop-types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import "../styles/componentsDesign/CreateMissionDialog.css"; // uses .pp* classes
+import "../styles/componentsDesign/CreateMissionDialog.css"; 
 
-/* tiny helpers */
+
 const normalize = (doc) => ({
   _id: doc._id?.toString?.() ?? doc._id,
   fullName: doc.fullName ?? doc.name ?? "—",
@@ -18,16 +18,16 @@ async function fetchJSON(input, init) {
 }
 const debounce = (fn, ms) => { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); }; };
 
-/** Works with your /api/soldiers routes (role + search/all) */
+
 export default function PersonPicker({ role, values, setValues }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [selected, setSelected] = useState([]); // normalized objs
+  const [selected, setSelected] = useState([]); 
   const already = useMemo(() => new Set(values), [values]);
 
-  // hydrate chips from ids (maintain order)
+
   useEffect(() => {
     const ids = Array.isArray(values) ? values : [];
     if (!ids.length) { setSelected([]); return; }
@@ -48,7 +48,6 @@ export default function PersonPicker({ role, values, setValues }) {
     return () => { ignore = true; };
   }, [values]);
 
-  // debounced search
   const doSearch = useMemo(() => debounce(async (q, ctl) => {
     try {
       const base = `/api/soldiers?role=${encodeURIComponent(role)}`;
@@ -97,7 +96,6 @@ export default function PersonPicker({ role, values, setValues }) {
   return (
     <div
       className="pp"
-      /* extra guard so Enter inside this section never submits the form */
       onKeyDownCapture={(e) => { if (e.key === "Enter") e.preventDefault(); }}
     >
       <div className="pp-head">

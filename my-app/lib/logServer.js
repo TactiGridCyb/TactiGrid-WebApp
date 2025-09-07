@@ -1,10 +1,10 @@
-/* eslint-disable no-console */
+
 // lib/logs/httpServer.js
 import http from 'http';
 import { handleEncryptedUpload } from '@/lib/handleUpload';
 
 const g = globalThis;
-g.__log_http ??= null; // { server, host, port, sockets }
+g.__log_http ??= null; 
 const getState = () => g.__log_http;
 const setState = (s) => (g.__log_http = s);
 
@@ -59,7 +59,6 @@ export async function startLogHttpServer({ host = DEFAULT_HOST, port = DEFAULT_P
   const server = http.createServer(async (req, res) => {
     const { route, missionId } = parsePath(req.url || '/');
 
-    // CORS (optional for testing)
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }

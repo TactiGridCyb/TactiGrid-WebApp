@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
-import "../styles/componentsDesign/SearchSoldiers.css"; // glass + spinner
+import "../styles/componentsDesign/SearchSoldiers.css"; 
 
 export default function SearchSoldiers({ onSelect }) {
   const [query, setQuery] = useState("");

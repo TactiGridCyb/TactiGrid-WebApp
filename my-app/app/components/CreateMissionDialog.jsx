@@ -24,7 +24,6 @@ const requiredPerStep = {
 };
 const isObjectId = (v) => typeof v === "string" && /^[0-9a-fA-F]{24}$/.test(v);
 
-/* configs loader (expects [{_id,name}] or {configs:[…]}) */
 function useConfigs() {
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,10 +108,8 @@ export default function CreateMissionDialog({ isOpen, onClose }) {
     return done;
   }, [getValues]);
 
-  /* Keep the confirm close ONLY on the X button */
   const handleClose = () => confirm("Discard all entered data?") && (reset(), setStep(0), onClose?.());
 
-  /* NO-OP on overlay click or ESC */
   const noop = () => {};
 
   const onSubmit = async (raw) => {
@@ -159,7 +156,6 @@ export default function CreateMissionDialog({ isOpen, onClose }) {
       <div className="cmd-container">
         <Dialog.Panel
           className="cmd-panel glass-card"
-          /* swallow Esc entirely at panel level too */
           onKeyDownCapture={(e) => {
             if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); }
           }}
@@ -186,7 +182,7 @@ export default function CreateMissionDialog({ isOpen, onClose }) {
             onSubmit={handleSubmit(onSubmit)}
             className="cmd-form"
             noValidate
-            /* block Enter everywhere in the form */
+
             onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
           >
             {step === 0 && (
@@ -205,7 +201,6 @@ export default function CreateMissionDialog({ isOpen, onClose }) {
       id="StartTime"
       type="datetime-local"
       className="cmd-input"
-      /* prevent past times */
       min={new Date().toISOString().slice(0, 16)}
       {...register("StartTime", {
         required: "Pick a start time",
@@ -266,20 +261,17 @@ export default function CreateMissionDialog({ isOpen, onClose }) {
   <div className="cmd-field">
     <label className="cmd-label" htmlFor="Configuration">Pick Configuration</label>
 
-    {/* Optional legacy error display; ConfigPicker fetches internally */}
     {cfgErr && (
       <div className="cmd-error" style={{ marginBottom: 6 }}>
         Failed to load configurations. {String(cfgErr?.message || cfgErr)}
       </div>
     )}
 
-    {/* Fancy card picker (shows GMK/FHF function names, interval, etc.) */}
     <ConfigPicker
       value={watch('Configuration') || ''}
       onChange={(id) => setValue('Configuration', id, { shouldValidate: true })}
     />
 
-    {/* Keep RHF validation exactly as before */}
     <input
       type="hidden"
       id="Configuration"

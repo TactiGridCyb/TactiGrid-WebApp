@@ -17,7 +17,6 @@ export async function POST(request) {
   await dbConnect();
   const user = await User.findOne({ email }).lean();
 
-  // No such user or bad password ➜ 401
   if (!user || !(await bcrypt.compare(password, user.hashedPassword))) {
     return NextResponse.json(
       { success: false, message: 'Invalid credentials' },
@@ -25,24 +24,23 @@ export async function POST(request) {
     );
   }
 
-  // Build JWT payload (keep it small!)
   const token = jwt.sign(
-    { sub: user._id.toString(), name: user.email }, // or user.name if you add it
+    { sub: user._id.toString(), name: user.email },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
 
-  // Send cookie + small public part of user
+
   const res = NextResponse.json({ success: true, user: { email: user.email } });
 
   res.cookies.set({
     name: 'authToken',
     value: token,
-    httpOnly: true,          // not accessible from JS
+    httpOnly: true,          
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: 60 * 60 * 24 * 7 // 7 days
+    maxAge: 60 * 60 * 24 * 7 
   });
 
   return res;

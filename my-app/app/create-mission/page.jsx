@@ -6,17 +6,15 @@ import MissionItem from "../components/missionItem";
 import CreateMissionDialog from "../components/CreateMissionDialog";
 import styles from "../styles/pagesDesign/createMission.module.css";
 
-/* normalize raw docs → predictable shape */
 const shape = (doc) => ({
   id:          (doc._id ?? doc.id)?.toString?.() ?? "",
   missionName: doc.missionName ?? doc.missionsName ?? doc.name ?? "—",
   startTime:   doc.StartTime ?? doc.startTime ?? null,
-  duration:    doc.Duration ?? doc.duration ?? null, // seconds
+  duration:    doc.Duration ?? doc.duration ?? null, 
   location:    doc.Location ?? doc.location ?? {},
   isFinished:  doc.IsFinished ?? doc.isFinished ?? false,
 });
 
-/* client fetch (cookies included automatically same-site) */
 async function fetchActiveMissions() {
   const res = await fetch("/api/missionFunctions?finished=false", {
     credentials: "include",

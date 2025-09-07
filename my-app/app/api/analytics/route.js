@@ -1,14 +1,12 @@
 // app/api/analytics/route.js
 
 import dbConnect from '../../../lib/mongoose';
-import Mission   from '../../../models/MissionModel';        // note: no “Model” suffix
+import Mission   from '../../../models/MissionModel';       
 import Configuration from '../../../models/Configuration';
 
 export async function GET() {
-  // 1) Connect to DB
   await dbConnect();
 
-  // 2) Missions per month
   const perMonth = await Mission.aggregate([
     { $group: {
         _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } },
@@ -22,7 +20,6 @@ export async function GET() {
     missions: m.count
   }));
 
-  // 3) Recent creations & closures
   const created = await Mission.find()
     .sort({ createdAt: -1 })
     .limit(5)
@@ -54,20 +51,17 @@ export async function GET() {
     })
   }));
 
-  // 4) Average soldiers per mission
   const avgSoldiersAgg = await Mission.aggregate([
     { $project: { num: { $size: '$Soldiers' } } },
     { $group:   { _id: null, avg: { $avg: '$num' } } }
   ]);
   const avgSoldiers = Math.round((avgSoldiersAgg[0]?.avg || 0) * 100) / 100;
 
-  // 5) Average duration
   const avgDurationAgg = await Mission.aggregate([
     { $group: { _id: null, avg: { $avg: '$Duration' } } }
   ]);
   const avgDuration = Math.round((avgDurationAgg[0]?.avg || 0) * 100) / 100;
 
-  // 6) Most‐used GMK
   const gmkAgg = await Mission.aggregate([
     { $lookup: {
         from: 'configurations',
@@ -82,7 +76,6 @@ export async function GET() {
   ]);
   const mostUsedGmk = gmkAgg[0]?._id || null;
 
-  // 7) Most‐used FHF
   const fhfAgg = await Mission.aggregate([
     { $lookup: {
         from: 'configurations',
@@ -97,7 +90,6 @@ export async function GET() {
   ]);
   const mostUsedFhf = fhfAgg[0]?._id || null;
 
-  // 8) Return JSON
   return new Response(JSON.stringify({
     missionsPerMonth,
     recentActivities,

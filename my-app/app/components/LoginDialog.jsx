@@ -16,7 +16,7 @@ export default function LoginDialog({ onClose, onSuccess }) {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include", // make sure auth cookie is set
+      credentials: "include", 
       body: JSON.stringify({ email, password }),
     });
 
@@ -26,10 +26,9 @@ export default function LoginDialog({ onClose, onSuccess }) {
       return;
     }
 
-    onSuccess?.(data.user); // notify parent
-    onClose();              // close dialog UI
+    onSuccess?.(data.user); 
+    onClose();              
 
-    // Re-render the current route so middleware + server fetches run with the new cookie
     setTimeout(() => router.refresh(), 0);
   }
 

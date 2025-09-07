@@ -7,11 +7,7 @@ const DEFAULT_INTER_ID = process.env.INTER_CA_DEFAULT_ID || 'intermediate-ca-202
 
 const cache = new Map();
 
-/**
- * Load an Intermediate CA and return { certPem, keyPem }.
- * - If `id` is provided, loads that document (_id).
- * - If omitted, uses DEFAULT_INTER_ID and, if not found, falls back to newest {type:'intermediate'}.
- */
+
 export async function interCaLoader(id = DEFAULT_INTER_ID) {
   const cacheKey = id || ':latest';
   if (cache.has(cacheKey)) return cache.get(cacheKey);
@@ -39,24 +35,21 @@ export async function interCaLoader(id = DEFAULT_INTER_ID) {
   const certPem = doc.cert;
   const privPem = doc.privateKey || '';
 
-  let privateKey; // forge key object
+  let privateKey;
 
   if (privPem.includes('BEGIN ENCRYPTED PRIVATE KEY')) {
-    // PKCS#8 (encrypted). Decrypt → convert to PEM → parse key.
     let encInfo, keyInfo;
     try {
       encInfo = pki.encryptedPrivateKeyFromPem(privPem);
-      keyInfo = pki.decryptPrivateKeyInfo(encInfo, INT_PASS); // ASN.1 PrivateKeyInfo
+      keyInfo = pki.decryptPrivateKeyInfo(encInfo, INT_PASS); 
     } catch (e) {
       throw new Error('Failed to decrypt intermediate private key (check CA_INT_PASS)');
     }
-    const plainPkcs8Pem = pki.privateKeyInfoToPem(keyInfo);   // PEM for unencrypted PKCS#8
+    const plainPkcs8Pem = pki.privateKeyInfoToPem(keyInfo);  
     privateKey = pki.privateKeyFromPem(plainPkcs8Pem);
   } else if (privPem.includes('BEGIN PRIVATE KEY')) {
-    // PKCS#8 (unencrypted)
     privateKey = pki.privateKeyFromPem(privPem);
   } else if (privPem.includes('BEGIN RSA PRIVATE KEY')) {
-    // PKCS#1 (legacy). Try encrypted, fall back to unencrypted.
     privateKey = pki.decryptRsaPrivateKey(privPem, INT_PASS) || pki.privateKeyFromPem(privPem);
   } else {
     throw new Error('Unsupported intermediate private key PEM format');

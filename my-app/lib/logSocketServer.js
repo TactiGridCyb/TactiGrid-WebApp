@@ -10,7 +10,6 @@ export function startLogSocketServer(port = 9001) {
       try {
         const payload = JSON.parse(msg.toString());
 
-        /* expected JSON shape */
         await processEncryptedLog({
           missionId:  payload.missionId,
           certPem:    payload.certificate,

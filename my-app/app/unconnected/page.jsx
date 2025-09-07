@@ -9,7 +9,6 @@ export default function UnconnectedPage({ searchParams }) {
       <Navbar />
 
       <main className={styles.wrap}>
-        {/* Centered stack: bubble ABOVE the card */}
         <div className={styles.centerStage}>
           <div className={styles.redBubble} role="status" aria-live="polite">
             <div className={styles.pip} aria-hidden="true" />

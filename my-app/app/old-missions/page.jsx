@@ -4,7 +4,6 @@ import Navbar from '../components/Navbar.jsx';
 import MissionItem from '../components/missionItem.jsx';
 import styles from '../styles/pagesDesign/OldMissions.module.css';
 
-/* -------- normalise docs -------- */
 const shape = (doc) => ({
   id:          (doc._id ?? doc.id).toString(),
   missionName: doc.missionName ?? doc.name ?? '—',
@@ -14,7 +13,6 @@ const shape = (doc) => ({
   isFinished:  doc.IsFinished  ?? doc.isFinished ?? false,
 });
 
-/* -------- fetch finished missions -------- */
 async function getFinishedMissions() {
   const cookieStore = await cookies();
   const cookieHeader = cookieStore.toString();

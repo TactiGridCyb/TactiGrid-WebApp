@@ -8,7 +8,7 @@ export default function StatsCard({
   value,
   subtitle,
   percent,
-  hue = 'sky',                 // sky | pink | green | yellow | red | purple
+  hue = 'sky',                 
   Icon = CircleDollarSign,
 }) {
   return (

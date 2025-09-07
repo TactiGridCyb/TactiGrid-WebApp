@@ -1,12 +1,12 @@
 // app/api/missions/route.js
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongoose';     // your existing helper
-import Mission   from '@/models/MissionModel';    // the schema we built before
+import dbConnect from '@/lib/mongoose';     
+import Mission   from '@/models/MissionModel';    
 
 export async function GET(req) {
  
   const { searchParams } = new URL(req.url);
-  const finishedParam    = searchParams.get('finished'); // "true" | "false" | null
+  const finishedParam    = searchParams.get('finished'); 
 
   if (finishedParam !== 'true' && finishedParam !== 'false') {
     
@@ -21,10 +21,10 @@ export async function GET(req) {
 
   await dbConnect();
   const missions = await Mission.find({ IsFinished: isFinished })
-                                .sort({ StartTime: -1 });  // optional
+                                .sort({ StartTime: -1 });  
 
   
-  console.log(missions);   // inside getActiveMissions
+  console.log(missions);   
                          
   return NextResponse.json({ missions }, { status: 200 });
 }
@@ -33,7 +33,7 @@ export async function POST(req) {
   try {
     const body = await req.json();
 
-    // Minimal sanity-checks; add more if you need
+
     const required = ['missionName', 'StartTime', 'Duration',
                       'Location',     'Soldiers',  'Commanders',
                       'Configuration'];
@@ -49,8 +49,8 @@ export async function POST(req) {
     const mission = await Mission.create({
       missionName:  body.missionName,
       StartTime:    new Date(body.StartTime),
-      EndTime:      null,                 // starts unfinished
-      Duration:     body.Duration,        // seconds
+      EndTime:      null,                 
+      Duration:     body.Duration,       
       Location: {
         name: body.Location.name ?? '',
         lat:  body.Location.lat,

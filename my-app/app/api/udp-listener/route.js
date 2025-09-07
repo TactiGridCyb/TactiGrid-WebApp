@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 let isServerStarted = false;
 let lastMessage = "";
-let udpServer = null; // store the server instance
+let udpServer = null; 
 
 export async function POST() {
   if (isServerStarted) {
@@ -25,7 +25,6 @@ export async function POST() {
     udpServer.close();
   });
 
-  // Bind to port 5555
   udpServer.bind(5555,"192.168.1.202", () => {
     console.log("UDP server listening on port 5555");
   });
@@ -35,6 +34,5 @@ export async function POST() {
 }
 
 export async function GET() {
-  // Return the most recently received UDP message
   return NextResponse.json({ message: lastMessage });
 }

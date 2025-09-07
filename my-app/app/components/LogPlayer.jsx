@@ -5,7 +5,6 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from '../styles/componentsDesign/LogPlayer.module.css';
 
-/* ---------- helpers ---------- */
 const asStr = (x) => (x ?? '').toString();
 
 const toMs = (v) => {
@@ -39,7 +38,7 @@ const nameKey = (s) =>
     .trim()
     .replace(/\s+/g, ' ')
     .toLowerCase()
-    .replace(/[-\s]/g, ''); // canonical key from a human name
+    .replace(/[-\s]/g, ''); 
 
 const fmtClock = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -57,7 +56,6 @@ const agoText = (ms) => {
   return `${h}h ago`;
 };
 
-/* ---------- HR event helpers ---------- */
 const isHrEvent = (e) => {
   const n = normEvent(e?.eventName);
   return n.includes('hr') || n.includes('heart');
@@ -68,7 +66,6 @@ const readHrValue = (e) => {
   return Number.isFinite(n) ? n : null;
 };
 
-/* ---------- marker html ---------- */
 const VARIANT_CLASS = {
   ok: null,
   commander: styles.vCommander,
@@ -92,7 +89,6 @@ const divIcon = (variant, label) =>
     iconAnchor: [14, 14],
   });
 
-/* ---------- event icon/label ---------- */
 const eventMeta = (e) => {
   const n = normEvent(e?.eventName);
   if (isHrEvent(e)) return { icon: '💓', label: 'Heart rate' };
@@ -110,7 +106,6 @@ const eventMeta = (e) => {
   }
 };
 
-/* ---------- names & identity ---------- */
 const buildBaseNameMap = (namesObj) => {
   const m = new Map();
   for (const [k, v] of Object.entries(namesObj || {})) {
@@ -143,7 +138,6 @@ export default function LogPlayer({ log, mission, names = {} }) {
     ? toMs(sortedData[sortedData.length - 1].time_sent)
     : Number.NEGATIVE_INFINITY;
 
-  // event bounds
   let firstEventMs = Number.POSITIVE_INFINITY;
   let lastEventMs = Number.NEGATIVE_INFINITY;
   for (const e of Events) {
@@ -153,15 +147,12 @@ export default function LogPlayer({ log, mission, names = {} }) {
     if (ts > lastEventMs) lastEventMs = ts;
   }
 
-  // start = earliest of data/events (fallback 0 if neither exists)
   const earliest = Math.min(firstDataMs, firstEventMs);
   const startMs = Number.isFinite(earliest) ? earliest : 0;
 
-  // end = latest of data/events + 3000ms buffer
   const latest = Math.max(lastDataMs, lastEventMs);
   const endMs = Number.isFinite(latest) ? latest + 5000 : startMs;
 
-  // duration ≥ 0
   const durationMs = Math.max(endMs - startMs, 0);
 
 
@@ -175,11 +166,9 @@ export default function LogPlayer({ log, mission, names = {} }) {
     [Events]
   );
 
-  /* base names from props + fetched names for ObjectIds */
   const baseNameMap = useMemo(() => buildBaseNameMap(names), [names]);
   const [fetchedNames, setFetchedNames] = useState(() => new Map());
 
-  /* gather all tokens we might need names for (ObjectIds only) */
   const idsToResolve = useMemo(() => {
     const set = new Set();
     const commanders = (mission?.Commanders ?? mission?.commanders ?? []).map(toIdStr);
@@ -188,7 +177,6 @@ export default function LogPlayer({ log, mission, names = {} }) {
       const sid = toIdStr(row?.soldierId);
       if (isMongoId(sid)) set.add(sid);
     }
-    // only ID-like fields from events; name fields (newCommanderID/missingID/compromisedID) are names, not IDs
     for (const e of sortedEvents) {
       const idish = pick(e, ['soldierID', 'soldierId', 'subjectID', 'subjectId', 'id']);
       const v = toIdStr(idish);
@@ -197,7 +185,6 @@ export default function LogPlayer({ log, mission, names = {} }) {
     return Array.from(set);
   }, [mission, sortedData, sortedEvents]);
 
-  /* fetch names for unknown ObjectIds */
   useEffect(() => {
     const unknown = idsToResolve.filter((id) => !fetchedNames.has(id));
     if (!unknown.length) return;
@@ -230,31 +217,25 @@ export default function LogPlayer({ log, mission, names = {} }) {
     };
   }, [idsToResolve, fetchedNames]);
 
-  /* resolve a token (ObjectId/IDF_ID/name) to a display name */
   const displayName = useCallback(
     (token) => {
       const t = asStr(token);
       const byToken = baseNameMap.get(`__token__:${t}`);
       if (byToken) return byToken;
       if (isMongoId(t) && fetchedNames.has(t)) return fetchedNames.get(t);
-      return t; // name/string as-is
+      return t; 
     },
     [baseNameMap, fetchedNames]
   );
 
-  /* canonical person key:
-     - for IDs → use resolved name
-     - for names → use the name directly
-  */
+  
   const keyFromIdToken = useCallback((token) => nameKey(displayName(token)), [displayName]);
   const keyFromName = useCallback((fullName) => nameKey(fullName), []);
 
-  /* UI state */
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
 
-  /* Map setup (panes to keep events above markers) */
   const mapRef = useRef(null);
   const markersLayerRef = useRef(L.layerGroup());
   const eventsLayerRef = useRef(L.layerGroup());
@@ -292,17 +273,16 @@ export default function LogPlayer({ log, mission, names = {} }) {
     };
   }, [sortedData]);
 
-  /* Event-driven state at now (MATCH BY NAME for commander/missing/compromised;
-     HR comes only from events and is stored by canonical key) */
+ 
   const stateAt = useCallback(
     (nowMs) => {
       const missing = new Set();
       const compromised = new Set();
       const unqualified = new Set();
       const cutOff = new Map();
-      const hrMap = new Map(); // key -> last HR value up to now
+      const hrMap = new Map(); 
 
-      // initial commander can be ID or NAME
+ 
       const initialCmdrs = mission?.Commanders ?? mission?.commanders ?? [];
       let commander = null;
       if (initialCmdrs.length) {
@@ -317,7 +297,6 @@ export default function LogPlayer({ log, mission, names = {} }) {
         const ev = normEvent(e.eventName);
 
         if (ev === 'commanderswitch') {
-          // 🔑 name string in newCommanderID
           const nameStr = asStr(pick(e, ['newCommanderID', 'newCommander'])).trim();
           if (nameStr) commander = keyFromName(nameStr);
           continue;
@@ -349,7 +328,6 @@ export default function LogPlayer({ log, mission, names = {} }) {
           continue;
         }
 
-        // 💓 HR event: subject name preferred; fall back to id if provided
         if (isHrEvent(e)) {
           const subjName =
             asStr(pick(e, ['soldierName', 'subjectName', 'name'])).trim() || null;
@@ -364,7 +342,6 @@ export default function LogPlayer({ log, mission, names = {} }) {
     [mission, sortedEvents, keyFromIdToken, keyFromName]
   );
 
-  /* Roster at now */
   const nowMs = startMs + t;
   const latestRef = useRef(new Map());
 
@@ -375,7 +352,7 @@ export default function LogPlayer({ log, mission, names = {} }) {
     for (const row of sortedData) {
       const ts = toMs(row.time_sent);
       if (ts > nowMs) break;
-      const key = keyFromIdToken(toIdStr(row.soldierId)); // soldierId is ObjectId → resolve to name
+      const key = keyFromIdToken(toIdStr(row.soldierId)); 
       if (cutOff.has(key) && ts > cutOff.get(key)) continue;
       latest.set(key, row);
     }
@@ -394,7 +371,7 @@ export default function LogPlayer({ log, mission, names = {} }) {
       else if (unqualified.has(key)) status = 'unqualified';
 
       const name = displayName(toIdStr(row.soldierId));
-      const hr = hrMap.has(key) ? hrMap.get(key) : null; // HR strictly from events
+      const hr = hrMap.has(key) ? hrMap.get(key) : null;
 
       list.push({
         id: key,
@@ -412,14 +389,12 @@ export default function LogPlayer({ log, mission, names = {} }) {
     return list;
   }, [sortedData, displayName, stateAt, nowMs, keyFromIdToken]);
 
-  /* Draw markers + events up to now */
   useEffect(() => {
     if (!mapRef.current) return;
 
     markersLayerRef.current.clearLayers();
     eventsLayerRef.current.clearLayers();
 
-    // markers
     for (const s of roster) {
       const label = s.name?.[0]?.toUpperCase() ?? '';
       const icon = divIcon(s.status, label);
@@ -433,13 +408,11 @@ export default function LogPlayer({ log, mission, names = {} }) {
         .addTo(markersLayerRef.current);
     }
 
-    // events (strictly by time)
     const first = sortedData[0];
     for (const e of sortedEvents) {
       const ts = eventTs(e);
       if (ts > nowMs) break;
 
-      // Subject is NAME for commander/missing/compromised; HR prefers name, may fall back to id
       let subjectName =
         e.eventName === 'commanderSwitch'
           ? asStr(pick(e, ['newCommanderID', 'newCommander'])).trim()
@@ -456,7 +429,6 @@ export default function LogPlayer({ log, mission, names = {} }) {
       let evLat = e.latitude;
       let evLng = e.longitude;
 
-      // try subject's last known location
       if ((evLat == null || evLng == null) && (subjectName || subjectId)) {
         const key =
           subjectName ? keyFromName(subjectName) : isMongoId(subjectId) ? keyFromIdToken(subjectId) : null;
@@ -469,7 +441,6 @@ export default function LogPlayer({ log, mission, names = {} }) {
         }
       }
 
-      // fallbacks: map center, then first sample
       if (evLat == null || evLng == null) {
         const c = mapRef.current.getCenter?.();
         if (c) {
@@ -504,7 +475,6 @@ export default function LogPlayer({ log, mission, names = {} }) {
     }
   }, [roster, sortedEvents, nowMs, displayName, keyFromIdToken, keyFromName, sortedData]);
 
-  /* Playback loop */
   useEffect(() => {
     if (!playing) return;
     let raf;

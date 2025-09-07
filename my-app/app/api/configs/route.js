@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
-import Config from '@/models/configuration';     // see model below
+import Config from '@/models/configuration';     
 
 export async function GET(req) {
   const { searchParams } = new URL(req.url);

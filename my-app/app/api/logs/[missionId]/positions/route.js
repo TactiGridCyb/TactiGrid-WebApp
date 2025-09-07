@@ -19,7 +19,6 @@ const toIdStringArray = (arr) =>
         if (x._id)  return String(x._id);
         if (x.id)   return String(x.id);
         if (x.IDF_ID) return String(x.IDF_ID);
-        // sometimes data mistakenly stores names; return them as-is
         if (x.fullName) return String(x.fullName);
       }
       return null;
@@ -36,17 +35,14 @@ export async function GET(_req, { params }) {
 
     await dbConnect();
 
-    // 1) Mission
     const mission = await Mission.findOne({ _id: missionId /* , owner: me._id */ }).lean();
     if (!mission) return NextResponse.json({ error: 'mission-not-found' }, { status: 404 });
 
-    // 2) Log (prefer mission.Log, else latest for Mission)
     let logDoc = null;
     if (mission.Log) logDoc = await Log.findById(mission.Log).lean();
     if (!logDoc) logDoc = await Log.findOne({ Mission: mission._id }).sort({ createdAt: -1 }).lean();
     if (!logDoc) return NextResponse.json({ error: 'log-not-found' }, { status: 404 });
 
-    // 3) Collect identifiers that might be ObjectIds or names
     const idsFromMission = [
       ...toIdStringArray(mission.Soldiers ?? mission.soldiers),
       ...toIdStringArray(mission.Commanders ?? mission.commanders),
@@ -58,11 +54,9 @@ export async function GET(_req, { params }) {
 
     const uniqueIds = Array.from(new Set([...idsFromMission, ...idsFromLog]));
 
-    // Partition: valid ObjectIds vs labels (names, callsigns, etc.)
     const oidList = uniqueIds.filter(isOid).map((v) => new mongoose.Types.ObjectId(String(v)));
     const labelList = uniqueIds.filter((v) => !isOid(v));
 
-    // 4) Build names map
     const names = Object.fromEntries(labelList.map((v) => [String(v), String(v)])); // name→name
     if (oidList.length) {
       const people = await Soldier.find(
@@ -74,7 +68,6 @@ export async function GET(_req, { params }) {
       }
     }
 
-    // 5) Normalize mission for the client
     const missionOut = {
       _id: String(mission._id),
       missionName: mission.missionName ?? mission.name ?? '',
@@ -86,7 +79,6 @@ export async function GET(_req, { params }) {
       IsFinished: !!(mission.IsFinished ?? mission.isFinished),
     };
 
-    // 6) Normalize log for the client
     const toNum = (v) => (v == null ? v : Number(v));
     const logOut = {
       Interval: logDoc.Interval ?? 1000,
@@ -96,7 +88,7 @@ export async function GET(_req, { params }) {
         latitude:  toNum(r.latitude),
         longitude: toNum(r.longitude),
         heartRate: toNum(r.heartRate),
-        time_sent: r.time_sent, // keep raw; client parses
+        time_sent: r.time_sent, 
       })),
       Events: (logDoc.Events ?? []).map((e) => ({
         eventName: e.eventName,

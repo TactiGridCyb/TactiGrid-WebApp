@@ -1,10 +1,9 @@
 // app/api/soldiers/route.js
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongoose';          // your helper
-import Soldier   from '@/models/Soldier';         // a simple Mongoose model
+import dbConnect from '@/lib/mongoose';          
+import Soldier   from '@/models/Soldier';         
 
-// GET /api/soldiers?search=abc            ← fuzzy search by name (case-insensitive)
-// GET /api/soldiers?all=1                 ← list all (capped at 200)
+
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const term   = (searchParams.get('search') || '').trim();
@@ -12,10 +11,10 @@ export async function GET(req) {
 
   await dbConnect();
 
-  /* build query */
+
   let query = {};
   if (!listAll) {
-    const regex = new RegExp(term, 'i');                 // case-insensitive
+    const regex = new RegExp(term, 'i');                
     query = {
       $or: [
         { fullName: regex },
@@ -24,10 +23,10 @@ export async function GET(req) {
       ],
     };
   }
-  const role = searchParams.get('role') || 'Soldier';   // default soldiers
+  const role = searchParams.get('role') || 'Soldier';   
 query.role = role;
   const docs = await Soldier
-    .find(query, '_id fullName IDF_ID role')             // project only what UI needs
+    .find(query, '_id fullName IDF_ID role')            
     .limit(listAll ? 200 : 25);
 
   return NextResponse.json(docs);

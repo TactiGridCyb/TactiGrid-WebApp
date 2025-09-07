@@ -1,4 +1,4 @@
-// app/missions/[sessionId]/page.js   (still a server component)
+// app/missions/[sessionId]/page.js 
 import { cookies } from 'next/headers';
 import ClientPlayer from '../../components/ClientPlayer.jsx';
 import Navbar from '@/app/components/Navbar.jsx';
@@ -15,11 +15,11 @@ async function getMissionAndLog(id) {
   });
 
   if (!res.ok) return null;
-  return res.json();          // ⇒ { mission, log }
+  return res.json();         
 }
 
 export default async function MissionPage({ params }) {
-  const { missionId } = await params;          // URL segment
+  const { missionId } = await params;         
   const bundle = await getMissionAndLog(missionId);
 
   if (!bundle) return <p>Mission not found or not yours.</p>;
@@ -29,7 +29,7 @@ export default async function MissionPage({ params }) {
   return (
     <div style={{ height: '100vh' }}>
       <Navbar></Navbar>
-      {/* Pass both pieces down; ClientPlayer forwards them to LogPlayer */}
+     
       <ClientPlayer log={log} mission={mission} />
     </div>
   );

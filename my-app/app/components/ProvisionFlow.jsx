@@ -6,13 +6,12 @@ import styles from '../styles/componentsDesign/ProvisionFlow.module.css';
 export default function ProvisionFlow({ missionId, soldiers, commanders }) {
   const queue = useMemo(() => [...commanders, ...soldiers].map(String), [commanders, soldiers]);
 
-  const [done,     setDone]     = useState([]);   // IDs that already pinged
+  const [done,     setDone]     = useState([]);   
   const [starting, setStarting] = useState(false);
-  const [status,   setStatus]   = useState('stopped'); // 'stopped' | 'starting' | 'up' | 'error'
+  const [status,   setStatus]   = useState('stopped'); 
   const [names,    setNames]    = useState({});
   const [err,      setErr]      = useState('');
 
-  // Pretty names
   useEffect(() => {
     if (!queue.length) return;
     (async (ids) => {
@@ -20,7 +19,7 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
         const res = await fetch('/api/soldiers/names', {
           method : 'POST',
           headers: { 'Content-Type': 'application/json' },
-          credentials: 'include', // ← ensure cookie rides along
+          credentials: 'include',
           body   : JSON.stringify({ ids }),
         });
         if (!res.ok) throw new Error(`names fetch failed ${res.status}`);
@@ -35,7 +34,6 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
     })(queue);
   }, [queue.join(',')]);
 
-  // SSE progress
   useEffect(() => {
     const es = new EventSource(`/api/provision/stream?missionId=${missionId}`);
     es.onmessage = e => {
@@ -45,7 +43,6 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
       } catch {}
     };
     es.onerror = () => {
-      // Let EventSource handle retries; could set a UI hint if you want
     };
     return () => es.close();
   }, [missionId]);
@@ -56,7 +53,7 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
   async function start() {
     setStarting(true);
     setErr('');
-    setStatus('starting'); // 🔴 show "Starting up server…"
+    setStatus('starting'); 
     try {
       const res = await fetch('/api/provision/start', {
         method : 'POST',
@@ -66,8 +63,8 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || 'Failed to start provisioning');
-      setStatus('up');     // 🟢 server is up → you can connect
-      setDone([]);         // fresh run
+      setStatus('up');     
+      setDone([]);         
     } catch (e) {
       setStatus('error');
       setErr(e.message || 'Failed to start provisioning');
@@ -101,11 +98,11 @@ export default function ProvisionFlow({ missionId, soldiers, commanders }) {
     }
   }
 
-  // Resend: only if already done → remove checkmark and add back to queue (end)
+  
   async function resend(subjectId) {
     subjectId = String(subjectId);
-    if (!done.includes(subjectId)) return;           // no-op if not already sent
-    setDone(d => d.filter(x => x !== subjectId));    // remove checkmark immediately (UX)
+    if (!done.includes(subjectId)) return;         
+    setDone(d => d.filter(x => x !== subjectId));    
     try {
       const res = await fetch('/api/provision/resend', {
         method : 'POST',

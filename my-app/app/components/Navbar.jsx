@@ -15,7 +15,6 @@ export default function Navbar() {
   const listRef = useRef(null);
   const bubbleRef = useRef(null);
 
-  // who am I?
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
@@ -36,7 +35,6 @@ export default function Navbar() {
     { href: "/dashboard", label: "Statistics" },
   ];
 
-  // Move the bubble to a given target element
   const moveBubbleTo = (el) => {
     if (!el || !listRef.current || !bubbleRef.current) return;
     const listRect = listRef.current.getBoundingClientRect();
@@ -59,7 +57,6 @@ export default function Navbar() {
     if (bubbleRef.current) bubbleRef.current.classList.remove(styles.visible);
   };
 
-  // On route change, park the bubble under the active item
   useEffect(() => {
     const active = listRef.current?.querySelector(`[data-active="true"]`);
     if (active) moveBubbleTo(active);
@@ -69,22 +66,15 @@ export default function Navbar() {
     <nav className={styles.navbar} role="navigation" aria-label="Main">
       <div className={styles.inner}>
         <ul className={styles.navList} ref={listRef} onMouseLeave={hideBubble}>
-          {/* the glassy trailing bubble */}
           <span className={styles.bubble} ref={bubbleRef} aria-hidden="true" />
 
           {links.map((l) => {
-            // ✅ Logged out: allow Home ("/"), gate everything else to /unconnected?next=...
             const effectiveHref = user
               ? l.href
               : l.href === "/"
               ? "/"
               : `/unconnected?next=${encodeURIComponent(l.href)}`;
 
-            // Highlight logic:
-            // - Logged in: active if pathname === link
-            // - Logged out:
-            //    * On /unconnected: active if ?next=<link>
-            //    * On /: active only for Home
             const nextParam = searchParams?.get("next");
             const isActiveWhenLoggedOut =
               (pathname === "/unconnected" && nextParam === l.href) ||

@@ -214,6 +214,6 @@ export default function ConfigPicker({ value, onChange }) {
 }
 
 ConfigPicker.propTypes = {
-  value:    PropTypes.string,      // selected _id (or '')
+  value:    PropTypes.string,      
   onChange: PropTypes.func.isRequired,
 };

@@ -7,7 +7,6 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "../styles/componentsDesign/CreateMissionDialog.css";
 
-/* Recenter when position changes */
 function RecenterOnPosition({ position }) {
   const map = useMap();
   useEffect(() => {
@@ -16,7 +15,6 @@ function RecenterOnPosition({ position }) {
   return null;
 }
 
-/* Invalidate map size when dialog/layout changes */
 function InvalidateOnResize({ containerRef }) {
   const map = useMap();
   useEffect(() => {
@@ -30,7 +28,6 @@ function InvalidateOnResize({ containerRef }) {
   return null;
 }
 
-/* Click anywhere to move the pin */
 function ClickToMove({ onMove }) {
   useMapEvents({
     click(e) {
@@ -40,7 +37,6 @@ function ClickToMove({ onMove }) {
   return null;
 }
 
-/* Simple OpenStreetMap forward+reverse geocoder (no key required) */
 async function forwardGeocode(q) {
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`;
   const res = await fetch(url, { headers: { "Accept-Language": "en" } });
@@ -80,7 +76,6 @@ export default function MapPicker({ value, onChange }) {
     setPos({ lat, lng });
     let addr = maybeAddress ?? address ?? "";
     if (maybeAddress === undefined) {
-      // update address by reverse geocoding (debounced by user actions)
       try { addr = await reverseGeocode({ lat, lng }); } catch {}
     }
     setAddress(addr);

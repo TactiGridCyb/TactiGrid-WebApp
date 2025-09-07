@@ -10,10 +10,8 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing field(s)' }, { status: 400 });
     }
 
-    /* 1 ── sign cert */
     const signed = await issueCertificate({ fullName, subjectId, isCommander });
 
-    /* 2 ── persist in Mongo */
     await mongoose.connect(process.env.MONGODB_URI);
     const doc = await Certificate.create({
       subjectId,
@@ -23,7 +21,6 @@ export async function POST(req) {
       ...signed,
     });
 
-    /* 3 ── return PEMs so caller can download / push to device */
     return NextResponse.json(
       {
         _id:          doc._id,

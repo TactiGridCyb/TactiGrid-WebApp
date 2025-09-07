@@ -1,11 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 
-/**
- * Reusable debounce + abort helper.
- * @param {function(string, AbortSignal): Promise<Array>} fetcher
- * @param {number} delay  default 300 ms
- */
+
 export default function useDebouncedSearch(fetcher, delay = 300) {
   const [query,   setQuery]   = useState('');
   const [items,   setItems]   = useState([]);

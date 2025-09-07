@@ -1,4 +1,4 @@
-// app/api/cert/get/route.ts
+// app/api/cert/get/route.js
 import { NextResponse } from 'next/server';
 import Certificate from '../models/Certificate';
 export async function GET(req) {

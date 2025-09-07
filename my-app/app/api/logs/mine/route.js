@@ -12,22 +12,19 @@ export async function GET() {
 
   await dbConnect();
 
-  /*  One pipeline that collects both shapes:
-        – legacy rows  → already flat
-        – wrapped rows → unwrapped so only `log` contents remain
-  */
+
   const rows = await Log.aggregate([
-    // grab documents that belong to the user (outer OR inner userId)
+    
     {
       $match: {
         $or: [
-          { userId: me._id },          // legacy documents
-          { 'log.userId': me._id }     // wrapped documents
+          { userId: me._id },          
+          { 'log.userId': me._id }     
         ]
       }
     },
 
-    // if the document has a `log` field, use it; otherwise keep the root
+    
     {
       $addFields: {
         normalized: {
@@ -40,10 +37,10 @@ export async function GET() {
       }
     },
 
-    // make `normalized` the new root
+
     { $replaceRoot: { newRoot: '$normalized' } },
 
-    // keep only the summary fields your page needs
+  
     {
       $project: {
         _id:        1,
@@ -61,9 +58,9 @@ export async function GET() {
       }
     },
 
-    // newest first – works for either shape
+
     { $sort: { StartTime: -1 } }
   ]);
 
-  return NextResponse.json(rows);      // array of unified summary docs
+  return NextResponse.json(rows);     
 }

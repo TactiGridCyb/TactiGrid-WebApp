@@ -3,7 +3,7 @@ import mongoose  from 'mongoose';
 
 const PASS = '12345';
 
-let cached;   // { certPem, keyPem }
+let cached;   
 
 export async function getCA() {
   if (cached) return cached;
@@ -15,8 +15,8 @@ export async function getCA() {
   if (!doc) throw new Error('Root-CA document not found');
 
   const pki       = forge.pki;
-  const certPem   = doc.cert;                                // public
-  const keyPem    = forge.pki.privateKeyToPem(               // decrypted
+  const certPem   = doc.cert;                                
+  const keyPem    = forge.pki.privateKeyToPem(               
                      pki.decryptRsaPrivateKey(doc.privateKey, PASS)
                    );
 

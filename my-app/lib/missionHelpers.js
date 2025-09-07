@@ -1,21 +1,4 @@
-/**
- * lib/missionHelpers.js
- * ------------------------------------------------------------
- * Pure client-side helpers for the “Create Mission” dialog.
- * All functions return plain JSON objects and accept an optional
- * AbortSignal so you can cancel in-flight fetches.
- * ------------------------------------------------------------
- */
 
-/* ───────────────────────── 1. Address → coordinates ───────────────────────── */
-
-/**
- * Convert a free-text address into { lat, lng } using the public
- * OpenStreetMap / Nominatim geocoder.
- *
- * @param  {string} address
- * @return {Promise<{ lat:number, lng:number }>}
- */
 export async function geocode(address) {
   if (!address?.trim()) throw new Error('Please enter an address first.');
 
@@ -23,7 +6,6 @@ export async function geocode(address) {
     `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
 
   const res = await fetch(endpoint, {
-    // polite User-Agent header (Nominatim’s usage policy asks for it)
     headers: { 'User-Agent': 'TactiGrid-MissionPlanner/1.0 (https://your-domain)' }
   });
 
@@ -38,7 +20,6 @@ export async function geocode(address) {
   };
 }
 
-/* ──────────────────────── 2. Generic API fetch helper ─────────────────────── */
 
 async function hit(endpoint, signal) {
   const res = await fetch(endpoint, { signal });
@@ -46,18 +27,7 @@ async function hit(endpoint, signal) {
   return res.json();
 }
 
-/* ───────────────────────────── 3. Soldiers API ────────────────────────────── */
 
-/**
- * Fetch soldiers from your own /api endpoint.
- * • term === ''  →  /api/soldiers?all=1
- * • term !== ''  →  /api/soldiers?search=<term>
- *
- * @param  {string} term        search string (empty for “all”)
- * @param  {AbortSignal?} signal optional AbortController.signal
- * @return {Promise<Array<{ _id:string, name:string, rank?:string }>>}
- */
-/* only real soldiers */
 export function fetchSoldiers(term = '', signal) {
   const url = term
     ? `/api/soldiers?role=Soldier&search=${encodeURIComponent(term)}`
@@ -65,7 +35,6 @@ export function fetchSoldiers(term = '', signal) {
   return hit(url, signal);
 }
 
-/* only commanders */
 export function fetchCommanders(term = '', signal) {
   const url = term
     ? `/api/soldiers?role=Commander&search=${encodeURIComponent(term)}`
@@ -77,6 +46,6 @@ export function fetchCommanders(term = '', signal) {
 export function fetchConfigs(term = '', signal) {
   const url = term
     ? `/api/configs?search=${encodeURIComponent(term)}`
-    : `/api/configs`;                 // return first 20 if no search
+    : `/api/configs`;                 
   return hit(url, signal);
 }

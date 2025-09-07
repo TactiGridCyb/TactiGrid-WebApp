@@ -32,7 +32,7 @@ export default function SalesChart({ data }) {
   ];
   const chartData = data?.length ? data : sample;
 
-  const gid = useId(); // unique gradient id
+  const gid = useId(); 
 
   return (
     <section className={cls.wrapper}>

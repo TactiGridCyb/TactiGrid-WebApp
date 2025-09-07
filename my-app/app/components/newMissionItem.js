@@ -1,22 +1,18 @@
 'use client';
 import PropTypes from 'prop-types';
-import styles    from '../styles/componentsDesign/MissionItemsCard.module.css';   // ← paste the CSS you sent into this file
+import styles    from '../styles/componentsDesign/MissionItemsCard.module.css';  
 
-/**
- * One card in the mission list.
- * The markup mirrors the class-names in your CSS so the
- * hover-zoom + grey overlay work out of the box.
- */
+
 export default function MissionItem({ m, onOpen }) {
   return (
     <article
       className={styles.missionCard}
-      onClick={onOpen}              /* optional click handler */
+      onClick={onOpen}            
     >
-      {/* ── grey hover overlay ── */}
+
       <div className={styles.overlay}>Click to open</div>
 
-      {/* ── header row ── */}
+
       <div className={styles.headerRow}>
         <span className={styles.icon}>ℹ️</span>
 
@@ -26,7 +22,7 @@ export default function MissionItem({ m, onOpen }) {
         </div>
       </div>
 
-      {/* ── detail rows ── */}
+
       <div className={styles.detailsRow}>
         <span className={styles.detail}>
           <span className={styles.detailLabel}>Start:</span> {m.startTime}
@@ -54,7 +50,6 @@ export default function MissionItem({ m, onOpen }) {
         </span>
       </div>
 
-      {/* ── optional bottom button (remove if you don’t need it) ── */}
       {onOpen && (
         <div className={styles.buttonContainer}>
           <button className={styles.viewVideoBtn}>Open Mission</button>
@@ -66,5 +61,5 @@ export default function MissionItem({ m, onOpen }) {
 
 MissionItem.propTypes = {
   m: PropTypes.object.isRequired,
-  onOpen: PropTypes.func               // pass a handler if you want the button / card clickable
+  onOpen: PropTypes.func               
 };

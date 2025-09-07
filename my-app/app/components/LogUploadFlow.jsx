@@ -4,13 +4,13 @@ import { useMemo, useState } from 'react';
 import styles from '../styles/componentsDesign/ProvisionFlow.module.css';
 
 export default function LogUploadFlow({ missionId }) {
-  const [status, setStatus] = useState('stopped'); // 'stopped' | 'starting' | 'up' | 'error'
+  const [status, setStatus] = useState('stopped'); 
   const [err, setErr] = useState('');
   const [msg, setMsg] = useState('');
   const [host, setHost] = useState(process.env.NEXT_PUBLIC_LOGS_HTTP_HOST || '0.0.0.0');
   const [port, setPort] = useState(Number(process.env.NEXT_PUBLIC_LOGS_HTTP_PORT || 9002));
 
-  const [last, setLast] = useState(null); // {items, logId, receivedAt, isFinished}
+  const [last, setLast] = useState(null); 
 
   const endpoint = useMemo(() => {
     if (typeof window === 'undefined') return `http://${host}:${port}/upload/${missionId}`;

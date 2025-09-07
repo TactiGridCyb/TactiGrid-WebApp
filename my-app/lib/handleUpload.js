@@ -8,10 +8,9 @@ import dbConnect   from '@/lib/mongoose';
 import Log         from '@/models/LogsModel';
 import Mission     from '@/models/MissionModel';
 import RevokedCert from '@/models/RevokedCert';
-import Certificate from '@/models/Certificate'; // ← NEW
+import Certificate from '@/models/Certificate'; 
 import { interCaLoader as getCA } from '@/lib/interCaLoader';
 
-/* ────────── decrypt helpers ────────── */
 function decryptGMK(b64, caKeyPem) {
   return crypto.privateDecrypt(
     { key: caKeyPem, padding: crypto.constants.RSA_PKCS1_PADDING },
@@ -44,7 +43,6 @@ async function decryptLogChacha(b64, gmkBuf) {
   return JSON.parse(Buffer.from(plaintext).toString('utf8'));
 }
 
-/* ────────── core handler ────────── */
 export async function handleEncryptedUpload({ missionId, certificatePem, gmk, log }) {
   if (!certificatePem || !gmk || !log) {
     return { status: 400, body: { error: 'missing-fields' } };
@@ -52,10 +50,8 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
 
   await dbConnect();
 
-  // 1) Root CA
   const { certPem: caPem, keyPem: caKeyPem } = await getCA();
 
-  // 2) Validate certificate
   try {
     const pki       = forge.pki;
     const commander = pki.certificateFromPem(certificatePem);
@@ -72,7 +68,6 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
     return { status: 400, body: { error: 'certificate-parse-fail' } };
   }
 
-  // 3) Decrypt GMK
   let gmkBuf;
   try {
     gmkBuf = decryptGMK(gmk, caKeyPem);
@@ -80,7 +75,6 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
     return { status: 400, body: { error: err.message } };
   }
 
-  // 4) Decrypt log
   let plainLog;
   try {
     plainLog = await decryptLogChacha(log, gmkBuf);
@@ -88,12 +82,10 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
     return { status: 400, body: { error: e.message } };
   }
 
-  // 5) Integrity check
   if (String(plainLog.Mission) !== String(missionId)) {
     return { status: 400, body: { error: 'mission-id-mismatch' } };
   }
 
-  // 6) Store & mark finished
   let logId;
   try {
     const created = await Log.create(plainLog);
@@ -104,12 +96,10 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
     return { status: 400, body: { error: err.message } };
   }
 
-  // 7) Revoke ALL soldiers' certificates for this mission (and delete the cert docs)
   let revokeStats = { revokedCount: 0, deletedCount: 0 };
   try {
     revokeStats = await revokeAllMissionSoldierCerts(missionId);
   } catch (err) {
-    // Do not fail the upload if revocation hits an issue; report it back to caller
     console.error('REVOKE-FAIL', err);
     return { status: 200, body: { ok: true, logId: String(logId), revokeError: err.message } };
   }
@@ -120,9 +110,7 @@ export async function handleEncryptedUpload({ missionId, certificatePem, gmk, lo
   };
 }
 
-/* ────────── helper: revoke every soldier cert for a mission ────────── */
 async function revokeAllMissionSoldierCerts(missionId) {
-  // Pull soldiers from Mission doc (supports both Soldiers/soldiers shapes)
   const mission = await Mission.findById(missionId).lean();
   if (!mission) throw new Error('mission-not-found');
 
@@ -132,7 +120,6 @@ async function revokeAllMissionSoldierCerts(missionId) {
     return { revokedCount: 0, deletedCount: 0 };
   }
 
-  // Find all soldier certs for this mission
   const certs = await Certificate.find(
     { missionId, subjectId: { $in: soldiers } },
     { _id: 1, serialNumber: 1 }
@@ -140,10 +127,8 @@ async function revokeAllMissionSoldierCerts(missionId) {
 
   if (!certs.length) return { revokedCount: 0, deletedCount: 0 };
 
-  // Ensure unique index for revoked serials (idempotent + safe for concurrency)
   await RevokedCert.collection.createIndex({ serial: 1 }, { unique: true });
 
-  // Upsert all serials into RevokedCert in bulk
   const now = new Date();
   const ops = certs.map(c => ({
     updateOne: {
@@ -154,7 +139,6 @@ async function revokeAllMissionSoldierCerts(missionId) {
   }));
   await RevokedCert.bulkWrite(ops, { ordered: false });
 
-  // Delete the actual cert docs so nothing remains retrievable post-mission
   const del = await Certificate.deleteMany({ _id: { $in: certs.map(c => c._id) } });
 
   return { revokedCount: certs.length, deletedCount: del?.deletedCount ?? 0 };

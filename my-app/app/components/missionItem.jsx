@@ -3,13 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "../styles/componentsDesign/missionItemsCard.module.css";
-// import UploadLogButton from "../components/UploadLogButton"; // ⬅️ removed
 import ReportButton from "../components/ReportButton";
 
 export default function MissionItem({ mission }) {
   const router = useRouter();
 
-  /* -------- normalised props -------- */
   const {
     id          = (mission._id ?? "").toString(),
     missionName = mission.missionName ?? mission.missionsName ?? mission.name ?? "—",
@@ -19,12 +17,10 @@ export default function MissionItem({ mission }) {
     isFinished  = mission.IsFinished ?? mission.isFinished ?? false,
   } = mission;
 
-  /* -------- helpers -------- */
   const fmtDate = (d) => (d ? new Date(d).toLocaleString() : "—");
   const fmtDur  = (s) => (s ? `${s}s` : "—");
   const shortId = (str) => (str ? str.slice(-6) : "—");
 
-  /* -------- local state -------- */
   const [open, setOpen] = useState(false);
   const toggle = () => setOpen((v) => !v);
 
@@ -37,10 +33,8 @@ export default function MissionItem({ mission }) {
       onClick={toggle}
       onKeyDown={(e) => e.key === "Enter" && toggle()}
     >
-      {/* glossy swipe sheen */}
       <span className={styles.sheen} aria-hidden="true" />
 
-      {/* -------- header & brief details -------- */}
       <div className={styles.headerRow}>
         <span className={styles.icon} aria-hidden="true">
           {isFinished ? "✅" : "⏳"}
@@ -78,7 +72,6 @@ export default function MissionItem({ mission }) {
         </div>
       </div>
 
-      {/* -------- expanding drawer -------- */}
       <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
         {isFinished ? (
           <div className={styles.actions}>
@@ -92,7 +85,6 @@ export default function MissionItem({ mission }) {
           </div>
         ) : (
           <div className={styles.actions}>
-            {/* Replaced UploadLogButton with a redirect to the new Logs Upload page */}
             <button
               className={`btn ${styles.actionBtn}`}
               onClick={() => router.push(`/create-mission/${id}/uploadlog`)}

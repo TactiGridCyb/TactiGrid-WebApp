@@ -5,30 +5,25 @@ import mongoose from 'mongoose';
 
 import Certificate          from '@/models/Certificate';
 import Soldier              from '@/models/Soldier';
-import RevokedCert          from '@/models/RevokedCert';             // ← NEW
+import RevokedCert          from '@/models/RevokedCert';             
 import { issueCertificate } from '@/lib/issueCertificate';
 import { runMissionConfiguration } from '@/scripts/runConfig.js';
-import { interCaLoader } from '@/lib/interCaLoader'; // ⬅️ added
+import { interCaLoader } from '@/lib/interCaLoader'; 
 
-/* ── tweakables filled after we inspect the mission ── */
-let GMK;                         // 32-char hex
-let FREQS;                       // whatever FHF returns
-let INTERVAL = 2000;             // ms  (default, overwritten later)
 
-const PASS = '12345';            // decrypt CA private key
-const PORT = 8743;               // TLS port
+let GMK;                        
+let FREQS;                    
+let INTERVAL = 2000;           
 
-/* ── singleton state so only ONE server runs at a time ── */
+const PASS = '12345';          
+const PORT = 8743;             
+
 const g = globalThis;
 g.__provisionTLS ??= null;
-/**
- * __provisionTLS shape:
- * { server, missionId, queueIds, index, resendQueue, sockets, closing }
- */
+
 const getState = () => g.__provisionTLS;
 const setState = (s) => (g.__provisionTLS = s);
 
-/* util helpers */
 const toPemList = (docs) => docs.map((d) => d.certPem);
 
 const stubName = async (id) => {
@@ -36,22 +31,15 @@ const stubName = async (id) => {
   return soldier?.fullName?.toString() || `P#${id.toString().slice(-4)}`;
 };
 
-/* ────────────────────────────────────────────────────────────────
- * ensureFreshCert:
- * - revoke any existing cert(s) for (subjectId, missionId)
- * - delete them
- * - issue & persist a new cert
- * - return the new doc
- * ──────────────────────────────────────────────────────────────── */
+
 async function ensureFreshCert(missionId, subjectId, fullName, isCommander) {
-  // 1) find all existing certs for this pair
   const old = await Certificate.find({ subjectId, missionId });
 
   if (old.length) {
-    // make sure we can upsert revocations safely
+
     await RevokedCert.collection.createIndex({ serial: 1 }, { unique: true });
 
-    // 1a) record revocation for each existing cert (idempotent)
+
     for (const cert of old) {
       try {
         const serial = forge.pki.certificateFromPem(cert.certPem).serialNumber;
@@ -65,18 +53,17 @@ async function ensureFreshCert(missionId, subjectId, fullName, isCommander) {
       }
     }
 
-    // 1b) remove old cert docs so we keep exactly one active per pair
+   
     await Certificate.deleteMany({ _id: { $in: old.map(c => c._id) } });
   }
 
-  // 2) issue & persist a fresh cert
   const signed = await issueCertificate({ fullName, subjectId, isCommander });
   const doc = await Certificate.create({
     subjectId,
     fullName,
     isCommander,
     missionId,
-    ...signed, // certPem, keyPem, serialNumber, validFrom, validTo
+    ...signed, 
   });
 
   return doc;
@@ -97,9 +84,7 @@ function attachSocketGuards(socket, socketsSet) {
   });
 }
 
-/* ------------------------------------------------------------------ *
- *  stopActiveServer() - closes any running TLS provision server       *
- * ------------------------------------------------------------------ */
+
 async function stopActiveServer() {
   const st = getState();
   if (!st?.server) return;
@@ -115,13 +100,11 @@ async function stopActiveServer() {
   console.log('[provision] previous TLS server closed');
 }
 
-/* ------------------------------------------------------------------ *
- *  startMissionProvision({ missionId, soldiers, commanders })        *
- * ------------------------------------------------------------------ */
+
 export async function startMissionProvision({ missionId, soldiers, commanders }) {
   await stopActiveServer();
 
-  /* 0️⃣ pull GMK / FHF / interval */
+
   const cfgOut = await runMissionConfiguration(missionId);
   GMK      = cfgOut.gmk;
   FREQS    = cfgOut.fhf;
@@ -131,14 +114,13 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
   console.log('✅ FHF:', FREQS);
   console.log('⏱️  interval:', INTERVAL, 'ms');
 
-  /* 1️⃣ connect to Mongo */
+
   await mongoose.connect(process.env.MONGODB_URI);
 
-  /* 2️⃣ pull Root-CA from DB */
-  const pki = forge.pki;
-  const { certPem: caCertPem, keyPem: caKeyPem } = await interCaLoader(); // ⬅️ switched to Intermediate
 
-  /* 3️⃣ ensure FRESH certificates for everyone (revoke+reissue each time) */
+  const pki = forge.pki;
+  const { certPem: caCertPem, keyPem: caKeyPem } = await interCaLoader(); 
+
   const soldierDocs = await Promise.all(
     soldiers.map(async (id) =>
       ensureFreshCert(missionId, id, await stubName(id), false)
@@ -153,12 +135,10 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
   const soldierPEMs   = toPemList(soldierDocs);
   const commanderPEMs = toPemList(commanderDocs);
 
-  /* 4️⃣ queue (commanders first) */
   const queueIds    = [...commanders, ...soldiers].map(String);
   let index         = 0;
   const resendQueue = [];
 
-  /* 5️⃣ TLS server */
   const sockets = new Set();
   const pickNext = () => {
     if (index < queueIds.length) return queueIds[index++];
@@ -198,7 +178,7 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
           method : 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-internal-provision': '1', // 👈 optional marker for observability
+            'x-internal-provision': '1', 
           },
           body   : JSON.stringify({ missionId, subjectId }),
         });
@@ -235,27 +215,19 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
   return { ok: true, message: `TLS provision server listening on :${PORT}`, port: PORT };
 }
 
-/* ------------------------------------------------------------------ *
- *  queueResend({ missionId, subjectId })
- *  - ONLY works if that subject was already sent (operator intent)
- *  - removes the "done"/checkmark in UI (frontend handles) and appends
- *    the subject to the resendQueue for later delivery
- * ------------------------------------------------------------------ */
+
 export function queueResend({ missionId, subjectId }) {
   const st = getState();
   if (!st?.server) throw new Error('No active provision server');
   if (String(st.missionId) !== String(missionId))
     throw new Error('Resend requested for a different mission than the active one');
 
-  // Append to the resend queue (served after main queue)
+ 
   st.resendQueue.push(String(subjectId));
   console.log('[provision] queued resend for', subjectId);
   return { ok: true };
 }
 
-/* ------------------------------------------------------------------ *
- *  stop / restart (for buttons)                                      *
- * ------------------------------------------------------------------ */
 export async function stopProvision() {
   await stopActiveServer();
   return { ok: true };

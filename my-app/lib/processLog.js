@@ -3,21 +3,18 @@ import mongoose   from 'mongoose';
 import Certificate from '@/models/Certificate';
 import Log        from '@/models/Log';
 import Revoked    from '@/models/RevokedCert';
-import { interCaLoader } from '@/lib/interCaLoader'; // ⬅️ added
+import { interCaLoader } from '@/lib/interCaLoader'; 
 
-const PASS = '12345';               // decrypt CA key (left as-is, now unused)
-const pki  = forge.pki;
+const PASS = '12345';               
 
 export async function processEncryptedLog({ missionId, certPem, gmkEncB64, logEncB64 }) {
-  /* 0) connect once */
   await mongoose.connect(process.env.MONGODB_URI);
 
-  /* 1) Load CA creds (now via INTERMEDIATE loader) */
-  const { certPem: caCertPem, keyPem: caKeyPem } = await interCaLoader(); // ⬅️ changed
-  const caCert  = pki.certificateFromPem(caCertPem);                       // ⬅️ changed
-  const caKey   = pki.privateKeyFromPem(caKeyPem);                         // ⬅️ changed
 
-  /* 2) Commander cert validation + revoke */
+  const { certPem: caCertPem, keyPem: caKeyPem } = await interCaLoader(); 
+  const caCert  = pki.certificateFromPem(caCertPem);                       
+  const caKey   = pki.privateKeyFromPem(caKeyPem);                         
+
   const commanderCert = pki.certificateFromPem(certPem);
   if (!caCert.verify(commanderCert))
     throw new Error('certificate not signed by our CA');
@@ -27,11 +24,9 @@ export async function processEncryptedLog({ missionId, certPem, gmkEncB64, logEn
     throw new Error('certificate already revoked');
   await Revoked.create({ serial });
 
-  /* 3) Decrypt GMK (RSA-OAEP) */
   const gmk = caKey.decrypt(Buffer.from(gmkEncB64, 'base64').toString('binary'), 'RSA-OAEP');
   if (gmk.length !== 32) throw new Error('GMK bad length');
 
-  /* 4) Decrypt log (AES-256-GCM) */
   const raw = Buffer.from(logEncB64, 'base64');
   const iv  = raw.slice(0, 12);
   const tag = raw.slice(raw.length - 16);
@@ -44,7 +39,6 @@ export async function processEncryptedLog({ missionId, certPem, gmkEncB64, logEn
 
   const logJson = JSON.parse(dec.output.toString());
 
-  /* 5) Store in DB */
   await Log.create({
     Mission:  missionId,
     Interval: logJson.interval ?? 2000,

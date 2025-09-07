@@ -4,17 +4,13 @@ import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar.jsx';
 import styles from '../styles/pagesDesign/CreateConfiguration.module.css';
 
-/* ──────────────────────────────────────────────────────────────
-   Allowed channels (same as your original)
-   ────────────────────────────────────────────────────────────── */
+
 export const LEGAL_CHANNELS = [
   ...Array.from({ length: 10 }, (_, i) => Number((433 + i * 0.1).toFixed(1))),
   ...Array.from({ length: 110 }, (_, i) => Number((868 + i * 0.1).toFixed(1))),
 ];
 
-/* ──────────────────────────────────────────────────────────────
-   Param meta (same as your original)
-   ────────────────────────────────────────────────────────────── */
+
 export const PARAM_INFO = {
   seed: { desc: 'PRNG seed string shared between devices', default: 'shared_sync_key_123' },
   baseFreq: { desc: 'Starting frequency (MHz). Must be in the allowed range.', default: 433.0 },
@@ -50,7 +46,7 @@ export default function CreateConfiguration() {
   const [result, setResult]       = useState(null);
   const [creating, setCreating]   = useState(false);
 
-  /* Load GMK & FHF defs */
+  
   useEffect(() => {
     fetch('/api/functions?type=GMK').then(r => r.json()).then(setGmks).catch(console.error);
     fetch('/api/functions?type=FHF').then(r => r.json()).then(setFhfs).catch(console.error);
@@ -59,7 +55,7 @@ export default function CreateConfiguration() {
   const selectedGmk = gmks.find(fn => fn.name === selGmk);
   const selectedFhf = fhfs.find(fn => fn.name === selFhf);
 
-  /* Reset GMK params to defaults on selection */
+
   useEffect(() => {
     if (!selectedGmk) { setGmkParams({}); return; }
     if (selectedGmk.name === 'gmkEcdh') {
@@ -80,7 +76,7 @@ export default function CreateConfiguration() {
     setGmkParams(defaults);
   }, [selectedGmk]);
 
-  /* Reset FHF params to defaults on selection */
+
   useEffect(() => {
     if (!selectedFhf) { setFhfParams({}); return; }
     const defaults = {};
@@ -100,7 +96,7 @@ export default function CreateConfiguration() {
     setFhfParams(defaults);
   }, [selectedFhf]);
 
-  /* Handle input changes for GMK / FHF parameters */
+
   const onParamChange = (which, name, value, type) => {
     if (type === 'array<number>') {
       const arr = Array.isArray(value)
@@ -116,7 +112,7 @@ export default function CreateConfiguration() {
     }
   };
 
-  /* Submit to /api/config */
+
   const handleCreate = async () => {
     if (!selGmk || !selFhf || !interval) {
       return alert('Please select GMK, FHF functions, and enter interval.');
@@ -208,9 +204,9 @@ export default function CreateConfiguration() {
                   type="button"
                   className={`${styles.btn} ${styles.btnGhost}`}
                   onClick={() => {
-                    // re-apply defaults
-                    setSelGmk(selGmk); // triggers useEffect path above if needed
-                    const ev = new Event('noop'); // no-op: visual affordance only
+                    
+                    setSelGmk(selGmk); 
+                    const ev = new Event('noop'); 
                   }}
                 >
                   Reset defaults
@@ -288,7 +284,7 @@ export default function CreateConfiguration() {
                   type="button"
                   className={`${styles.btn} ${styles.btnGhost}`}
                   onClick={() => {
-                    setSelFhf(selFhf); // re-apply defaults via effect
+                    setSelFhf(selFhf);
                   }}
                 >
                   Reset defaults

@@ -12,7 +12,6 @@ export async function POST(req) {
     }
 
     const out = await startMissionProvision({ missionId, soldiers, commanders });
-    // out.message looks like: "TLS provision server listening on :8743"
     return NextResponse.json(out, { status: 200 });
   } catch (err) {
     console.error('[provision] start error:', err);
