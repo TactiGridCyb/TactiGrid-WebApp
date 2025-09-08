@@ -19,7 +19,7 @@ const eventSchema = new Schema(
     eventName: {                           // <-- renamed “name” → “eventName”
       type: String,
       required: true,
-      enum: ['commanderSwitch', 'missingSoldier', 'compromisedSoldier'],
+      enum: ['commanderSwitch', 'missingSoldier', 'compromisedSoldier', 'SOS'],
     },
     timestamp: { type: Date, required: true }, // <-- renamed “time_sent”
 
@@ -27,6 +27,7 @@ const eventSchema = new Schema(
     newCommanderID: { type: String, trim: true },
     missingID:      { type: String, trim: true },
     compromisedID:  { type: String, trim: true },
+    SOSID:  { type: String, trim: true },
   },
   { _id: false }
 );
