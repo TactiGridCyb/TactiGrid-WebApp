@@ -357,3 +357,30 @@
     radial-gradient(900px 500px at 110% 10%, #f1f5f9 0%, transparent 45%),
     #ffffff;
 }
+
+.vCandidate .dotCore {
+  background-color: #f59e0b;
+}
+
+.vCandidate .dotGlow {
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.75);
+}
+
+/* Optional: keep your UI consistent elsewhere */
+.avatar--candidate {
+  background-color: #f59e0b;
+}
+
+.chip--candidate {
+  background: rgba(245, 158, 11, 0.15);
+  color: #8a4b00;
+  border: 1px solid #f59e0b;
+}
+
+.card--candidate {
+  border-left: 4px solid #f59e0b;
+}
+
+.ldCandidate {
+  background-color: #f59e0b;
+}

@@ -133,7 +133,7 @@ export async function startMissionProvision({ missionId, soldiers, commanders })
         Mission       : missionId,
         gmk           : GMK,
         frequencies   : FREQS,
-        intervalMs    : INTERVAL,
+        fhfInterval    : INTERVAL,
       };
       const payload = doc.isCommander
         ? { ...basePayload, soldiers: soldierPEMs, commanders: commanderPEMs }
