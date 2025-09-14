@@ -357,7 +357,7 @@ export default function LogPlayer({ log, mission, names = {} }) {
       else if (unqualified.has(key)) status = 'unqualified';
 
       const name = displayName(toIdStr(row.soldierId));
-      const hr = hrMap.has(key) ? hrMap.get(key) : null;
+      const hr = hrMap.has(key) ? hrMap.get(key) : row.heartRate;
       list.push({ id: key, name, hr, status, lastUpdateMs: age, lat: latitude, lng: longitude });
     });
 
