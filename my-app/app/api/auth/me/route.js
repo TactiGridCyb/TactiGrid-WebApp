@@ -5,7 +5,6 @@ import dbConnect from '@/lib/mongoose';
 import User from '@/models/User';
 
 export async function GET() {
-  // ← await the cookies() call first
   const cookieStore = await cookies();
   const token = cookieStore.get('authToken')?.value;
   if (!token) {
@@ -17,7 +16,6 @@ export async function GET() {
     const user = await User.findById(sub).lean();
     return NextResponse.json({ user: user ? { email: user.email } : null });
   } catch {
-    // bad/expired token ➜ clear cookie
     const res = NextResponse.json({ user: null });
     res.cookies.set('authToken', '', { maxAge: 0, path: '/' });
     return res;

@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { MongoClient } from "mongodb";
 import forge from "node-forge";
 import crypto from "crypto";
+import { interCaLoader } from "@/lib/interCaLoader";
 
 const uri = process.env.MONGODB_URI;
 const dbName = process.env.DB_NAME;
-const CA_PASS = "12345"; // ✅ Confirmed correct password
+const CA_PASS = process.env.CA_KEY_PASS;
 
 let isCommanderUDPStarted = false;
 let commanderCertPem = null;
@@ -19,7 +20,7 @@ export async function POST() {
 
     udpServer.on("listening", () => {
       const { address, port } = udpServer.address();
-      console.log(`🛰️ Commander UDP listening on ${address}:${port}`);
+      console.log(`Commander UDP listening on ${address}:${port}`);
     });
 
     udpServer.on("message", async (msg, rinfo) => {
@@ -29,70 +30,82 @@ export async function POST() {
         switch (payload.type) {
           case "certificate":
             commanderCertPem = payload.content;
-            console.log("✅ Received Commander Certificate");
+            console.log("Received Commander Certificate");
             break;
 
           case "gmk":
             encryptedGmkB64 = payload.content;
-            console.log("✅ Received Encrypted GMK");
+            console.log("Received Encrypted GMK");
             break;
 
           case "log":
             logPacket = payload.content;
-            console.log("✅ Received Encrypted Log");
+            console.log("Received Encrypted Log");
 
             if (commanderCertPem && encryptedGmkB64 && logPacket) {
-                console.log("🚀 Processing mission upload...");
+              console.log("Processing mission upload...");
 
-                // Step 1: Check certificate
-                const res = await fetch("http://localhost:3000/api/cert/verify", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ certPem: commanderCertPem }),
-                });
-                const certResult = await res.json();
+              const client = new MongoClient(uri);
+              await client.connect();
+              const db = client.db(dbName);
 
-                if (!certResult.valid) {
-                  console.log("❌ Certificate is revoked");
-                  const message = Buffer.from("❌ Certificate is revoked");
-                  udpServer.send(message, rinfo.port, rinfo.address);
-                  return;
-                }
+              const v = await verifyCommanderCertificate(
+                commanderCertPem,
+                logPacket.missionId,
+                db
+              );
 
-                // Step 2: Check mission
-                const client = new MongoClient(uri);
-                await client.connect();
-                const db = client.db(dbName);
-                const mission = await db.collection("missions").findOne({ missionId: logPacket.missionId });
-
-                if (!mission) {
-                  console.log("❌ Mission not found:", logPacket.missionId);
-                  const message = Buffer.from("❌ Mission not found");
-                  udpServer.send(message, rinfo.port, rinfo.address);
-                  await client.close();
-                  return;
-                }
+              if (!v.valid) {
+                console.log("Commander verification failed:", v.reason);
+                udpServer.send(
+                  Buffer.from(`Certificate rejected: ${v.reason}`),
+                  rinfo.port,
+                  rinfo.address
+                );
                 await client.close();
-
-                // Step 3: All checks passed — proceed
-                await revokeCommanderCertificate(commanderCertPem);
-                const gmk = await decryptGMK(encryptedGmkB64);
-                const decryptedLog = decryptLogWithGMK(logPacket.data, gmk);
-                const logId = await insertDecryptedLog(decryptedLog, logPacket);
-                await updateMission(logPacket.missionId, logId);
-
-                const message = Buffer.from("✅ Upload complete. Mission updated, log saved, cert revoked.");
-                udpServer.send(message, rinfo.port, rinfo.address);
-
-                commanderCertPem = null;
-                encryptedGmkB64 = null;
-                logPacket = null;
+                return;
               }
+
+              const mission = await db
+                .collection("missions")
+                .findOne({ missionId: String(logPacket.missionId) });
+
+              if (!mission) {
+                console.log("Mission not found:", logPacket.missionId);
+                udpServer.send(
+                  Buffer.from("Mission not found"),
+                  rinfo.port,
+                  rinfo.address
+                );
+                await client.close();
+                return;
+              }
+
+              await revokeCommanderCertificate(commanderCertPem);
+
+              const gmk = await decryptGMK(encryptedGmkB64);
+              const decryptedLog = decryptLogWithGMK(logPacket.data, gmk);
+
+              const logId = await insertDecryptedLog(db, decryptedLog, logPacket);
+              await updateMission(db, logPacket.missionId, logId);
+
+              udpServer.send(
+                Buffer.from("Upload complete. Mission updated, log saved, cert revoked."),
+                rinfo.port,
+                rinfo.address
+              );
+
+              await client.close();
+
+              commanderCertPem = null;
+              encryptedGmkB64 = null;
+              logPacket = null;
+            }
 
             break;
         }
       } catch (err) {
-        console.error("❌ UDP handling error:", err.message);
+        console.error("UDP handling error:", err.message);
       }
     });
 
@@ -100,21 +113,66 @@ export async function POST() {
     isCommanderUDPStarted = true;
   }
 
-  return NextResponse.json({ status: "Commander UDP server running on 0.0.0.0:5556" });
+  return NextResponse.json({
+    status: "Commander UDP server running on 0.0.0.0:5556",
+  });
 }
 
 export async function GET() {
   return NextResponse.json({ status: "OK" });
 }
 
-async function verifyCommanderCertificate(certPem) {
+async function verifyCommanderCertificate(certPem, expectedMissionId, db) {
   const res = await fetch("http://localhost:3000/api/cert/verify", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ certPem }),
   });
-  const json = await res.json();
-  return json.valid;
+  const { valid } = await res.json();
+  if (!valid) return { valid: false, reason: "revoked-or-expired" };
+
+  let serial;
+  try {
+    serial = forge.pki.certificateFromPem(certPem).serialNumber;
+  } catch {
+    return { valid: false, reason: "invalid-pem" };
+  }
+
+  let certDoc =
+    (await db.collection("certificates").findOne({ serialNumber: serial })) ||
+    (await db.collection("certs").findOne({ serialNumber: serial }));
+
+  if (!certDoc) return { valid: false, reason: "cert-not-found" };
+
+  if (
+    expectedMissionId &&
+    String(certDoc.missionId) !== String(expectedMissionId)
+  ) {
+    return {
+      valid: false,
+      reason: "mission-mismatch",
+      expected: String(expectedMissionId),
+      got: String(certDoc.missionId),
+    };
+  }
+
+  const soldier = await db
+    .collection("soldiers")
+    .findOne(
+      { _id: certDoc.subjectId },
+      { projection: { isCommander: 1, fullName: 1 } }
+    );
+
+  if (!soldier) return { valid: false, reason: "soldier-not-found" };
+  if (!soldier.isCommander) return { valid: false, reason: "soldier-not-commander" };
+
+  return {
+    valid: true,
+    subjectId: String(certDoc.subjectId),
+    fullName: soldier.fullName || certDoc.fullName,
+    missionId: String(certDoc.missionId),
+    serialNumber: serial,
+  };
 }
 
 async function revokeCommanderCertificate(certPem) {
@@ -124,26 +182,18 @@ async function revokeCommanderCertificate(certPem) {
     body: JSON.stringify({ certPem }),
   });
   const json = await res.json();
-  console.log("🔒 Revoked cert serial:", json.serial);
+  console.log("Revoked cert serial:", json.serial);
 }
 
 async function decryptGMK(encryptedB64) {
-  const client = new MongoClient(uri);
-  await client.connect();
-  const db = client.db(dbName);
-  const caDoc = await db.collection("CA").findOne({ _id: "root-ca" });
   const pki = forge.pki;
-
-  const privateKey = pki.decryptRsaPrivateKey(caDoc.privateKey, CA_PASS);
-  if (!privateKey) throw new Error("❌ Failed to decrypt CA private key.");
-
-  const encryptedBytes = Buffer.from(encryptedB64, "base64");
+  const { keyPem } = await interCaLoader();
+  const privateKey = pki.privateKeyFromPem(keyPem);
+  const encryptedBytes = forge.util.decode64(encryptedB64);
   const decryptedBytes = privateKey.decrypt(encryptedBytes, "RSA-OAEP", {
     md: forge.md.sha256.create(),
     mgf1: forge.mgf.mgf1.create(forge.md.sha256.create()),
   });
-
-  await client.close();
   return Buffer.from(decryptedBytes, "binary");
 }
 
@@ -151,51 +201,35 @@ function decryptLogWithGMK(encryptedBase64, gmkKey) {
   const encryptedBuffer = Buffer.from(encryptedBase64, "base64");
   const decipher = crypto.createDecipheriv("aes-256-ecb", gmkKey, null);
   decipher.setAutoPadding(true);
-
   let decrypted = decipher.update(encryptedBuffer, "base64", "utf8");
   decrypted += decipher.final("utf8");
-
   return JSON.parse(decrypted);
 }
 
-async function insertDecryptedLog(decryptedLog, logPacket) {
-  const client = new MongoClient(uri);
-  await client.connect();
-  const db = client.db(dbName);
-
+async function insertDecryptedLog(db, decryptedLog, logPacket) {
   const userId = logPacket.commanderId || "unknown_commander";
-  const sessionId = logPacket.missionId || `session-${Date.now()}`;
-
+  const sessionId = String(logPacket.missionId || `session-${Date.now()}`);
   const result = await db.collection("logs").insertOne({
     log: decryptedLog,
     createdAt: new Date(),
     userId,
     sessionId,
   });
-
-  await client.close();
   return result.insertedId.toString();
 }
 
-async function updateMission(missionId, logId) {
-  const client = new MongoClient(uri);
-  await client.connect();
-  const db = client.db(dbName);
-
-  const mission = await db.collection("missions").findOne({ missionId });
+async function updateMission(db, missionId, logId) {
+  const mission = await db.collection("missions").findOne({ missionId: String(missionId) });
   if (!mission) {
-    console.warn("⚠️ Mission not found:", missionId);
-    await client.close();
+    console.warn("Mission not found:", missionId);
     return;
   }
-
   const endTime = new Date();
   const startTime = new Date(mission.startTime);
   const durationMs = endTime - startTime;
   const duration = formatDuration(durationMs);
-
   await db.collection("missions").updateOne(
-    { missionId },
+    { missionId: String(missionId) },
     {
       $set: {
         endTime,
@@ -204,8 +238,6 @@ async function updateMission(missionId, logId) {
       },
     }
   );
-
-  await client.close();
 }
 
 function formatDuration(ms) {

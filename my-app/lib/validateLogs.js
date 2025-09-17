@@ -7,7 +7,6 @@ ajv.addFormat('date-time', {
   validate: (txt) => !isNaN(Date.parse(txt))
 });
 
-/* ── NEW JSON‑SCHEMA that matches the latest Log model ── */
 export const trackSchema = {
   type: 'object',
   required: [
@@ -17,12 +16,10 @@ export const trackSchema = {
   ],
   additionalProperties: false,
   properties: {
-    /* headline */
     sessionId:  { type:'string' },
-    operation:  { type:'string' },     // OPERATION REDHAWK
-    missionId:  { type:'string' },     // ABC123
+    operation:  { type:'string' },     
+    missionId:  { type:'string' },     
 
-    /* timing */
     StartTime:  { type:'string', format:'date-time' },
     EndTime:    { type:'string', format:'date-time' },
     Duration: {
@@ -30,7 +27,6 @@ export const trackSchema = {
       minimum: 1           
     },
 
-    /* meta */
     LogFiles: { type:'array', items:{ type:'string' } },
     GMK:      { type:'string' },
     Soldiers: { type:'array',
@@ -58,7 +54,6 @@ export const trackSchema = {
     },
     ConfigID: { type:'string' },
 
-    /* codec / interval */
     intervalMs:{ type:'integer', minimum:1 },
     codec:{
       type:'object',
@@ -71,7 +66,6 @@ export const trackSchema = {
       }
     },
 
-    /* NEW telemetry array */
     data:{
       type:'array',
       minItems:1,
@@ -89,7 +83,6 @@ export const trackSchema = {
       }
     },
 
-    /* optional replay blob */
     blob:{ instanceof:'Buffer' }
   }
 };

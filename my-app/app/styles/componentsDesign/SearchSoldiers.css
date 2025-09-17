@@ -1,0 +1,82 @@
+/* ===== Soldier Search — Glass List ===== */
+
+.ss {
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow:
+    0 12px 36px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.35),
+    inset 0 -1px 0 rgba(0,0,0,0.18);
+}
+
+.ss-input {
+  width: 100%;
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.18);
+  color: inherit;
+  outline: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.ss-input:focus {
+  box-shadow: 0 0 0 2px hsl(var(--ring) / .55);
+}
+
+.ss-spinner {
+  display: grid;
+  place-items: center;
+  height: 80px;
+}
+.ring {
+  width: 26px; height: 26px;
+  border-radius: 999px;
+  border: 3px solid rgba(255,255,255,0.35);
+  border-top-color: rgba(109,83,255,0.95);
+  animation: spin .9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.ss-results {
+  margin: 8px 0 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.ss-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.20);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+.ss-item:hover { filter: brightness(1.05); }
+
+.rank {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(59,130,246,.20);
+  border: 1px solid rgba(59,130,246,.35);
+  color: #155e75;
+}
+.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ss-empty {
+  padding: 12px;
+  text-align: center;
+  opacity: .75;
+}

@@ -1,0 +1,138 @@
+/* styles/pages/Unconnected.module.css */
+
+.wrap {
+  min-height: calc(100dvh - 72px);
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  position: relative;
+  background:
+    radial-gradient(60% 60% at 20% 20%, rgba(255, 80, 80, 0.06), transparent 60%),
+    radial-gradient(50% 50% at 80% 10%, rgba(80, 120, 255, 0.06), transparent 60%),
+    radial-gradient(55% 55% at 70% 80%, rgba(120, 255, 200, 0.06), transparent 60%);
+}
+
+/* Centered stack for bubble + card */
+.centerStage {
+  width: min(860px, 92vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+}
+
+/* Red bubble now sits ABOVE the card (centered) */
+.redBubble {
+  position: relative; /* no longer fixed */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  background:
+    linear-gradient(135deg, rgba(255, 59, 48, 0.95), rgba(255, 99, 88, 0.92));
+  color: white;
+  box-shadow:
+    0 10px 30px rgba(255, 59, 48, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  user-select: none;
+}
+
+.pip {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: white;
+  opacity: 0.9;
+  position: relative;
+}
+.pip::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  animation: ping 1.6s infinite;
+}
+@keyframes ping {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  70% { transform: scale(1.6); opacity: 0; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.bubbleText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  font-size: 14px;
+}
+.bubbleText strong {
+  font-size: 15px;
+}
+
+/* Glassy card */
+.card {
+  width: 100%; /* match container width */
+  padding: 28px 28px 22px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(14px) saturate(110%);
+  -webkit-backdrop-filter: blur(14px) saturate(110%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  color: var(--fg, #3b3b3b);
+}
+
+.title {
+  margin: 0 0 10px;
+  font-size: clamp(22px, 2.4vw, 28px);
+  letter-spacing: 0.2px;
+}
+
+.lead {
+  margin: 0 0 14px;
+  opacity: 0.9;
+}
+
+.code {
+  display: inline-block;
+  padding: 8px 10px;
+  margin-top: 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+.tips {
+  margin-top: 16px;
+  opacity: 0.95;
+}
+.tips ul {
+  margin: 8px 0 0 18px;
+  display: grid;
+  gap: 4px;
+}
+.tips li code {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+/* OPTIONAL: overlap the bubble slightly on the card top edge.
+   To enable, add className={`${styles.centerStage} ${styles.overlap}`} to the div in page.jsx */
+.overlap .redBubble {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.overlap .card {
+  padding-top: 44px; /* make room for the overlapping bubble */
+}

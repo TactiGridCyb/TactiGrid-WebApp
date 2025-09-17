@@ -1,0 +1,141 @@
+/* ===== Create Mission Dialog — Production Glass Wizard ===== */
+
+.cmd-dialog { position: fixed; inset: 0; z-index: 100; }
+
+.cmd-backdrop {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(40% 60% at 15% 10%, rgba(109,83,255,0.18), transparent 60%),
+    radial-gradient(45% 70% at 85% -10%, rgba(59,130,246,0.16), transparent 65%),
+    rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+
+.cmd-container { position: relative; min-height: 100%; display: grid; place-items: center; padding: 24px; }
+
+.cmd-panel {
+  width: min(980px, 100%); padding: 20px 20px 16px; border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.22);
+  box-shadow: 0 24px 70px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(0,0,0,0.18);
+  position: relative;
+}
+.cmd-close {
+  position: absolute; top: 10px; right: 12px; width: 34px; height: 34px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  font-size: 16px; cursor: pointer;
+}
+.cmd-close:hover { filter: brightness(1.05); }
+.cmd-title { margin: 2px 36px 8px 2px; font-size: clamp(1.3rem, 1.1rem + .5vw, 1.6rem); font-weight: 700; letter-spacing: .2px; }
+
+/* Stepper */
+.cmd-steps { display: grid; grid-auto-flow: column; gap: 8px; overflow-x: auto; padding: 6px 2px 12px; margin-bottom: 8px; }
+.cmd-step {
+  display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 999px;
+  background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.20);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); white-space: nowrap; opacity: .65; cursor: pointer;
+}
+.cmd-step.is-active { opacity: 1; box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+.cmd-step.is-done { outline: 1px solid rgba(255,255,255,0.35); }
+.cmd-dot { width: 8px; height: 8px; border-radius: 999px; background: rgba(255,255,255,0.9); box-shadow: 0 0 0 2px rgba(255,255,255,0.25); }
+.cmd-step-label { font-size: .85rem; letter-spacing: .2px; }
+
+/* Form */
+.cmd-form { display: grid; gap: 12px; }
+.cmd-field { display: grid; gap: 6px; }
+.cmd-label { font-size: .9rem; font-weight: 600; opacity: .85; }
+.cmd-input {
+  border-radius: 12px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.18); color: inherit;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); outline: none;
+}
+.cmd-input:focus { box-shadow: 0 0 0 2px hsl(var(--ring) / .55); }
+.cmd-error { color: #ef4444; font-size: .8rem; }
+
+/* Nav buttons */
+.cmd-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 6px; }
+.cmd-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: .65rem 1rem; border-radius: 12px; min-width: 120px;
+  border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,0.12); color: inherit;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  font-weight: 700; letter-spacing: .2px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); cursor: pointer;
+}
+.cmd-btn:disabled { opacity: .55; cursor: not-allowed; }
+.cmd-btn:hover:not(:disabled) { filter: brightness(1.05); }
+.cmd-primary { background: linear-gradient(180deg, rgba(109,83,255,0.85), rgba(109,83,255,0.75)); color: #fff; border-color: rgba(255,255,255,0.28); }
+
+/* Map */
+.map-block { display: grid; gap: 8px; }
+.map-toolbar { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.map-input { min-width: 0; }
+.map-wrapper {
+  height: 360px; border-radius: 12px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.20); background: rgba(255,255,255,0.12); position: relative;
+}
+.map { height: 100%; width: 100%; }
+.leaflet-container { background: transparent; }
+.map-readout { margin: 0; opacity: .8; font-size: .9rem; }
+.map-skeleton { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.08) 10px, transparent 10px, transparent 20px); animation: shimmer 1.4s infinite linear; }
+@keyframes shimmer { from { background-position: 0 0; } to { background-position: 40px 0; } }
+
+/* Pretty glass pin */
+.css-pin { position: relative; width: 28px; height: 28px; border-radius: 50%;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  background: radial-gradient(120% 140% at 25% 20%, rgba(255,255,255,.85), rgba(255,255,255,.45) 55%, rgba(255,255,255,.15) 100%);
+  border: 1px solid rgba(255,255,255,.55);
+  box-shadow: 0 8px 20px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.8), inset 0 -1px 0 rgba(0,0,0,.15);
+}
+.css-pin::after {
+  content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%);
+  width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid rgba(255,255,255,.55);
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.25));
+}
+
+/* PeoplePicker */
+.pp { display: grid; gap: 10px; }
+.pp-head { display: flex; align-items: center; gap: 10px; }
+.pp-search { flex: 1; border-radius: 12px; padding: 10px 12px; border: 1px solid rgba(255,255,255,0.25); background: rgba(255,255,255,0.18); color: inherit; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.pp-search:focus { box-shadow: 0 0 0 2px hsl(var(--ring) / .55); }
+.pp-count { font-size: .9rem; opacity: .85; }
+
+.pp-body { display: grid; gap: 10px; grid-template-columns: 1.1fr .9fr; }
+@media (max-width: 800px) { .pp-body { grid-template-columns: 1fr; } }
+
+.pp-results { background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 8px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.pp-loading { display: grid; place-items: center; height: 140px; }
+.ring { width: 26px; height: 26px; border-radius: 999px; border: 3px solid rgba(255,255,255,0.35); border-top-color: rgba(109,83,255,0.95); animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.pp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-height: 220px; overflow: auto; }
+.pp-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.20); cursor: pointer; }
+.pp-item:hover { filter: brightness(1.05); }
+
+.pp-avatar, .pp-chip-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+.pp-avatar.fallback, .pp-chip-avatar.fallback { display: grid; place-items: center; background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.35); }
+
+.pp-m { min-width: 0; }
+.pp-name { font-weight: 600; }
+.pp-rank { font-size: .8rem; opacity: .75; }
+
+.pp-add { border-radius: 10px; padding: 6px 10px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,0.12); }
+
+.pp-empty { padding: 10px; text-align: center; opacity: .75; }
+
+.pp-selected { padding: 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.20); }
+.pp-selected-title { font-size: .9rem; font-weight: 700; margin-bottom: 6px; opacity: .85; }
+.pp-selected-empty { padding: 10px; text-align: center; opacity: .75; }
+.pp-chips { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 240px; overflow: auto; }
+.pp-chip { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.20); }
+.pp-chip-move { width: 26px; height: 26px; border-radius: 8px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,0.12); }
+.pp-chip-main { min-width: 0; }
+.pp-chip-name { font-weight: 700; }
+.pp-chip-rank { font-size: .8rem; opacity: .75; }
+.pp-chip-x { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,0.12); font-weight: 900; }
+
+@media (max-width: 640px) {
+  .cmd-panel { padding: 16px 14px; width: min(96vw, 980px); }
+  .cmd-steps { gap: 6px; }
+  .cmd-step { padding: 5px 8px; }
+}

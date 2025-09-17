@@ -1,0 +1,8 @@
+/* ===== StatsGrid — responsive four-up with breathing room ===== */
+.wrap {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+@media (max-width: 960px)  { .wrap { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px)  { .wrap { grid-template-columns: 1fr; } }

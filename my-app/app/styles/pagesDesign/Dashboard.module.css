@@ -1,37 +1,131 @@
-.header {
-  text-align: center;
-  padding: 1rem;
-  font-size: 8rem;
-  color: black;
-  font-family: bebas;
-  text-shadow: 0 0 10px rgba(48, 48, 48, 0.3);
+/* ===== Minimal, Airy, Stacked Glass Dashboard ===== */
+
+.page {
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr;
 }
-  .dashboardRoot {
-    min-height: 100vh;
-    
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-    font-family: system-ui, sans-serif;
-  }
-  
-  .sectionGrid {
-    display: grid;
-    gap: 1.5rem;
-  }
-  
-  .twoThirdOneThird {
-    display: grid;
-    gap: 1.5rem;
-  }
-  
-  @media (min-width: 1280px) {           /* ≥ 1280 px */
-    .sectionGrid {
-      grid-template-columns: repeat(4, 1fr);
-    }
-    .twoThirdOneThird {
-      grid-template-columns: 2fr 1fr;
-    }
-  }
-  
+
+/* Slim hero */
+.hero {
+  padding: 14px 16px 6px;
+  background:
+    radial-gradient(35% 55% at 12% 5%, rgba(109,83,255,0.12), transparent 60%),
+    radial-gradient(40% 60% at 88% -10%, rgba(59,130,246,0.10), transparent 65%);
+}
+.heroInner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 10px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.title { margin: 0; font-size: clamp(1.2rem, 1.05rem + .6vw, 1.6rem); }
+
+/* Main container centered and narrow for calmness */
+.container {
+  max-width: 960px;
+  margin: 22px auto 48px;
+  padding: 0 16px;
+}
+
+/* Vertical stack with generous gaps */
+.stack { display: grid; gap: 28px; }
+
+/* Glass card (very light chrome) */
+.card {
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.07);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.22);
+}
+.cardHead { padding: 10px 14px 0; }
+.cardTitle { margin: 0; font-size: .95rem; font-weight: 700; opacity: .9; letter-spacing: .2px; }
+.cardBody { padding: 10px 14px 14px; }
+
+/* Focus on one chart; keep it compact */
+.cardChart .cardBody { padding-top: 6px; }
+.chartBody { min-height: 260px; }
+
+/* KPI rail — horizontal chips feel */
+.cardRail .cardBody { padding-top: 8px; }
+.kpiRail {
+  overflow-x: auto;
+  overflow-y: hidden;
+  mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+}
+.kpiRailInner {
+  display: inline-block;
+  /* Make inner KPI components feel smaller without touching their code */
+  transform: scale(.96);
+  transform-origin: left center;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 7px 10px; border-radius: 10px; font-weight: 700; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.10);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  transition: transform .15s ease, filter .15s ease;
+}
+.btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btnGhost { background: rgba(255,255,255,0.08); }
+
+/* Error callout */
+.errorBox {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(239,68,68,0.30);
+  background: rgba(239,68,68,0.12);
+  font-size: .92rem;
+}
+
+/* ===== Subtle skeletons ===== */
+.chartSkeleton {
+  height: 260px; border-radius: 12px; position: relative; overflow: hidden;
+  background: rgba(255,255,255,0.12);
+}
+.chartSkeleton::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.20), transparent);
+  transform: translateX(-100%); animation: shimmer 1.1s infinite;
+}
+
+.railSkeleton {
+  list-style: none; margin: 0; padding: 4px 0; display: grid; grid-auto-flow: column; gap: 12px;
+}
+.railSkeleton li {
+  width: 180px; height: 70px;
+  border-radius: 14px; position: relative; overflow: hidden;
+  background: rgba(255,255,255,0.12);
+}
+.railSkeleton li::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.20), transparent);
+  transform: translateX(-100%); animation: shimmer 1.1s infinite;
+}
+
+.activitySkeleton {
+  list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;
+}
+.activitySkeleton li {
+  height: 40px; border-radius: 10px; position: relative; overflow: hidden;
+  background: rgba(255,255,255,0.12);
+}
+.activitySkeleton li::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.20), transparent);
+  transform: translateX(-100%); animation: shimmer 1.1s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

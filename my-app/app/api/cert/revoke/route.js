@@ -1,9 +1,9 @@
-import { MongoClient } from 'mongodb';
-import forge from 'node-forge';
+// app/api/revoke/route.js 
 import { NextResponse } from 'next/server';
-
-const client = new MongoClient(process.env.MONGODB_URI);
-const dbName = process.env.DB_NAME;
+import forge             from 'node-forge';
+import dbConnect         from '@/lib/mongoose';
+import RevokedCert       from '@/models/RevokedCert';
+import Certificate       from '@/models/Certificate';
 
 export async function POST(req) {
   try {
@@ -12,27 +12,35 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Missing certPem' }, { status: 400 });
     }
 
-    await client.connect();
-    const db = client.db(dbName);
-    const revoked = db.collection('revoked');
-
-    const cert = forge.pki.certificateFromPem(certPem);
-    const serial = cert.serialNumber;
-
-    const alreadyRevoked = await revoked.findOne({ serial });
-    if (alreadyRevoked) {
-      return NextResponse.json({ message: 'Certificate already revoked' }, { status: 409 });
+    let serial;
+    try {
+      serial = forge.pki.certificateFromPem(certPem).serialNumber;
+    } catch {
+      return NextResponse.json({ error: 'Invalid PEM' }, { status: 400 });
     }
 
-    await revoked.insertOne({
-      serial,
-      subject: cert.subject.attributes,
-      revokedAt: new Date(),
-    });
+    await dbConnect();
+    await RevokedCert.collection.createIndex({ serial: 1 }, { unique: true });
 
-    return NextResponse.json({ message: 'Certificate revoked', serial });
+    const res = await RevokedCert.updateOne(
+      { serial },
+      { $setOnInsert: { serial }, $set: { revokedAt: new Date() } },
+      { upsert: true }
+    );
+
+    const already = res.matchedCount > 0; 
+
+    const del = await Certificate.deleteOne({ serialNumber: serial });
+
+    return NextResponse.json(
+      {
+        message: already ? 'Certificate already revoked' : 'Certificate revoked',
+        serial,
+        deletedFromCertificates: del.deletedCount, 
+      },
+      { status: already ? 409 : 200 }
+    );
   } catch (err) {
-    console.error('Revocation error:', err);
     return NextResponse.json({ error: 'Revocation failed' }, { status: 500 });
   }
 }

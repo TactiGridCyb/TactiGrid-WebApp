@@ -1,53 +1,191 @@
+/* ====== Ultra-glass navbar with trailing bubble ====== */
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 12px;
+  background: transparent;
+}
+
+/* glassy pill container */
+.inner {
   display: flex;
   align-items: center;
-  background: #545460;
- 
-  padding: 2rem 2rem;
-  padding-bottom: 30px;
-  box-shadow: 0 8px 8px rgba(0, 0, 0, 0.3);
+  justify-content: space-between;
+  gap: 12px;
+  width: min(1200px, calc(100% - 24px));
+  margin: 0 auto;
 
+  padding: 10px 14px;
+  border-radius: 18px;
+
+  background: linear-gradient(135deg, rgba(255,255,255,0.20), rgba(255,255,255,0.10));
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+
+  /* bevel + soft drop */
+  box-shadow:
+    0 12px 36px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.35),
+    inset 0 -1px 0 rgba(0,0,0,0.18);
+
+  overflow: hidden; /* clip the bubble at rounded corners */
 }
 
-.navbar ul {
+/* dark mode */
+:global(.dark) .inner {
+  background: linear-gradient(135deg, rgba(20,20,28,0.65), rgba(20,20,28,0.35));
+  border-color: rgba(255,255,255,0.10);
+  box-shadow:
+    0 16px 44px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 -1px 0 rgba(0,0,0,0.35);
+  color: #eef0f8;
+}
+
+/* nav list layer is relative so the bubble can be absolutely positioned */
+.navList {
+  position: relative;
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   list-style: none;
   margin: 0;
-  padding: 1;
-  flex-grow: 1;
+  padding: 0;
+  flex: 1 1 auto;
+  z-index: 0; /* bubble lives under links */
 }
 
-.navbar li {
-  margin-right: 1.8rem;
-}
+.navItem { z-index: 1; }
 
-.navbar a {
-  display: inline-block; /* Make the anchor behave like a block element */
-  color: #fff;
+.link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 14px;
+
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: .2px;
   text-decoration: none;
-  font-size: 2rem;
-  transition: transform 0.3s ease, color 0.3s ease;
+  color: #121318;
+
+  transition:
+    transform .18s ease,
+    color .18s ease,
+    filter .18s ease;
+}
+:global(.dark) .link { color: #f5f6fb; }
+
+.link:hover { transform: translateY(-1px); }
+
+/* active page (subtle when bubble is not on it) */
+.linkActive {
+  outline: 1px solid rgba(255,255,255,0.28);
+  background: rgba(255,255,255,0.12);
+}
+:global(.dark) .linkActive { background: rgba(255,255,255,0.06); }
+
+/* === The trailing bubble === */
+.bubble {
+  --b-left: 0px;
+  --b-top: 0px;
+  --b-width: 0px;
+  --b-height: 0px;
+
+  position: absolute;
+  left: var(--b-left);
+  top: var(--b-top);
+  width: var(--b-width);
+  height: var(--b-height);
+  border-radius: 16px;
+
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+
+  /* ultra glass look */
+  background: radial-gradient(120% 140% at 20% 10%, rgba(255,255,255,0.45), rgba(255,255,255,0.18) 60%, rgba(255,255,255,0.10) 100%);
+  border: 1px solid rgba(255,255,255,0.35);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  box-shadow:
+    0 18px 50px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    inset 0 -1px 0 rgba(0,0,0,0.25);
+
+  transition:
+    left .28s cubic-bezier(.22,.61,.36,1),
+    top .28s cubic-bezier(.22,.61,.36,1),
+    width .28s cubic-bezier(.22,.61,.36,1),
+    height .28s cubic-bezier(.22,.61,.36,1),
+    opacity .18s ease;
 }
 
-.navbar a:hover {
-  transform: scale(1.1); /* Grows the element to 110% of its original size */
-  color: #ccc;
+/* show/hide controlled by a class toggle (JS) */
+.visible { opacity: 1; }
+
+/* darker glass tint in dark mode */
+:global(.dark) .bubble {
+  background: radial-gradient(120% 140% at 20% 10%, rgba(255,255,255,0.22), rgba(255,255,255,0.12) 60%, rgba(255,255,255,0.08) 100%);
+  border-color: rgba(255,255,255,0.18);
+  box-shadow:
+    0 22px 60px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    inset 0 -1px 0 rgba(0,0,0,0.35);
 }
 
-.logoutBtn {
-  background: #444;
+/* session area */
+.sessionArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.greeting {
+  color: inherit;
+  font-size: 0.95rem;
+  opacity: 0.9;
+  padding-right: 0.25rem;
+}
+
+/* Buttons (module-scoped) */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  padding: .6rem .9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.12));
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  font-size: .95rem; font-weight: 600;
+  color: #121318; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+:global(.dark) .btn { color: #f3f3f8; }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 16px 32px rgba(0,0,0,0.18); }
+.btn:active { transform: translateY(0); }
+
+.btnPrimary {
+  background: linear-gradient(180deg, rgba(109,83,255,0.85), rgba(109,83,255,0.75));
   color: #fff;
-  border: none;
-  cursor: pointer;
-  font-size: 1.5rem;
-  padding: 1rem 1.5rem;
+  border-color: rgba(255,255,255,0.28);
 }
+.btnPrimary:hover { filter: brightness(1.05); }
 
-.greeting{
-  display: inline-block; /* Make the anchor behave like a block element */
-  color: #fff;
-  text-decoration: none;
-  font-size: 2rem;
-  padding-right: 2rem;
-  transition: transform 0.3s ease, color 0.3s ease;
+.btnGhost {
+  background: rgba(255,255,255,0.10);
+  color: inherit;
+}
+:global(.dark) .btnGhost { background: rgba(255,255,255,0.08); }
+.btnGhost:hover { background: rgba(255,255,255,0.16); }
+
+/* Small screens: disable bubble (tighter layout) */
+@media (max-width: 700px) {
+  .bubble { display: none; }
+  .inner { gap: 8px; padding: 8px 10px; }
+  .link { font-size: .95rem; padding: 8px 10px; }
+  .greeting { display: none; }
 }
